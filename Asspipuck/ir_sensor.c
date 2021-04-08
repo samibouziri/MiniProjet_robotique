@@ -23,12 +23,16 @@
 #define THETA6 		48.5*M_PI/180
 #define THETA7 		17.5*M_PI/180
 #define THRESHOLD 	600
+#define CLOSE_THR	100
 
 static const float COS_THETA []={cosf(THETA0) ,cosf(THETA1) ,cosf(THETA2) ,cosf(THETA3) ,cosf(THETA4) ,cosf(THETA5) ,cosf(THETA6) ,cosf(THETA7)};
 static const float SIN_THETA []={sinf(THETA0) ,sinf(THETA1) ,sinf(THETA2) ,sinf(THETA3) ,sinf(THETA4) ,sinf(THETA5) ,sinf(THETA6) ,sinf(THETA7)};
 //wheights assigned for the different sensors
 static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA4-THETA5+M_PI/6 ,
 		THETA4-THETA5+M_PI/6 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA7+(THETA6-THETA7)/2};
+
+
+
 
 //////////Public functions//////////
 
@@ -69,3 +73,35 @@ bool colision_detected (void){
 	}
 	return false;
 }
+
+
+/**
+ * @brief	returns detected value of the sensor
+ *
+ * @param	sensor that we want the value of
+ */
+float sensor_detection(sensors_t sensor)
+{
+return get_calibrated_prox(sensor);
+}
+
+
+/**
+ * @brief	detect if a sensor is in close proximity
+ * 			of an obstacle
+ *
+ * @param 	sensor to check the proximity of
+ * @return	true if in proximity and false otherwise
+ */
+bool sensor_close_obstacle (sensors_t sensor)
+{
+	if (sensor_detection(sensor) <=CLOSE_THR)
+		return true;
+	else return false;
+
+}
+
+
+
+
+

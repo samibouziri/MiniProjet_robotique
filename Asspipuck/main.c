@@ -45,6 +45,14 @@ int main(void)
 	proximity_start();
 	calibrate_ir();
 
+<<<<<<< HEAD
+	/* Infinite loop. */
+	while (1) {
+
+		move_forward(0.5, 500);
+		//waits 10 ms
+		chThdSleepMilliseconds(1000);
+=======
 	robot_position_start();
 
 	int16_t speed=500;
@@ -68,6 +76,7 @@ int main(void)
 		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
 		//waits 3 sec
 		chThdSleepMilliseconds(4000);
+>>>>>>> origin/main
 	}
 }
 
