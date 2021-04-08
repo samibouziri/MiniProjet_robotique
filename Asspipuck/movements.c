@@ -75,3 +75,34 @@ float angle_reflection (float angle_colision){
 		return M_PI+2*angle_colision;
 	}
 }
+
+
+
+void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
+{
+	bool stop_r=false;
+	bool stop_l=false;
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+
+	right_motor_set_speed(speed_r);
+	left_motor_set_speed(speed_l);
+
+	while (1)
+	{
+		if (abs(right_motor_get_pos())>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
+		{
+			stop_r=true;
+			right_motor_set_speed(0);
+		}
+		if (abs(left_motor_get_pos())>=abs(pos_l*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
+		{
+			stop_l=true;
+			left_motor_set_speed(0);
+		}
+		if (stop_r && stop_l) break;
+	}
+
+}
+
+
