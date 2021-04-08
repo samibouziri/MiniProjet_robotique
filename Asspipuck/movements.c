@@ -126,8 +126,6 @@ float angle_reflection (float angle_colision){
 }
 
 
-<<<<<<< HEAD
-
 void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
 {
 	bool stop_r=false;
@@ -156,7 +154,6 @@ void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
 }
 
 
-=======
 /**
  * @brief	returns the translation of the epuck from the initalization point
  *
@@ -204,4 +201,4 @@ void robot_position_start(void){
 	init_cos();
 	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
 }
->>>>>>> origin/main
+
