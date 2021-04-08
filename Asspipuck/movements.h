@@ -31,14 +31,14 @@ float angle_reflection (float angle_colision);
  *
  * @return	the translation in cm
  */
-float get_translation (void);
+float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
 
 /**
  * @brief	returns the angle of rotation of the epuck from the initalization point
  *
  * @return	the angle of rotation in rad
  */
-int32_t get_rotation (void);
+int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
 
 /**
  * @brief	converts a distance given in number of steps to a distance in cm
@@ -46,13 +46,17 @@ int32_t get_rotation (void);
  * @param 	nb_step 	distance in number of steps.
  * @return	distance in cm
  */
-float step_to_cm (uint32_t nb_step);
+float step_to_cm (int32_t nb_step);
 
-float get_x();
+float get_x(void);
 
+<<<<<<< HEAD
 float get_y();
+=======
+float get_y(void);
+>>>>>>> origin/main
 
-int16_t get_angle();
+int16_t get_angle(void);
 
 void robot_position_start(void);
 
