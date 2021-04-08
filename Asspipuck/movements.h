@@ -56,7 +56,14 @@ int16_t get_angle();
 
 void robot_position_start(void);
 
-
+/**
+ * @brief	for a given angle of incidence of a collision with a
+ * 			surface it returns the angle with which the e puck
+ * 			should turn in order to be reflected
+ *
+ * @param 	angle_colision 	angle of incidence of the epuck(in rad)
+ * @return	the angle with which the epuck must turn (in rad)
+ */
 void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l);
 
 
