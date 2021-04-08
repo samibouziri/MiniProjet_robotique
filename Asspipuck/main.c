@@ -45,22 +45,29 @@ int main(void)
 	proximity_start();
 	calibrate_ir();
 
-	int16_t speed=2000;
+	robot_position_start();
+
+	int16_t speed=500;
+	chThdSleepMilliseconds(10000);
 
 
 	/* Infinite loop. */
 	while (1) {
 
-		left_motor_set_speed(speed);
-		right_motor_set_speed(speed);
-		if (colision_detected()){
-			chprintf((BaseSequentialStream *)&SD3, "angle of reflection : %f \r\n",angle_reflection (angle_colision ()) );
-			rotate_rad(angle_reflection (angle_colision ()),speed);
-		}
-		left_motor_set_speed(speed);
-		right_motor_set_speed(speed);
-		//waits 10 ms
-		chThdSleepMilliseconds(10);
+		position_mode(10, 10, speed,  speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		rotate_rad(M_PI/2, speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		position_mode(10, 10, speed,  speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		position_mode(-10, -10, speed,  speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		rotate_rad(-M_PI/2, speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		rotate_rad(M_PI/2, speed);
+		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
+		//waits 3 sec
+		chThdSleepMilliseconds(4000);
 	}
 }
 
