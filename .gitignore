@@ -3,10 +3,8 @@ build
 lib
 Makefile
 *.xml
+*.launch 
 
-
-#launch file 
-*.launch
 # Prerequisites
 *.d
 
