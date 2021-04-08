@@ -4,6 +4,9 @@ lib
 Makefile
 *.xml
 
+
+#launch file 
+*.launch
 # Prerequisites
 *.d
 
