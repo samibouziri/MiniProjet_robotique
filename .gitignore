@@ -4,6 +4,8 @@ lib
 Asspipuck/Makefile
 *.launch
 *.xml
+*.launch 
+
 
 # Prerequisites
 *.d
