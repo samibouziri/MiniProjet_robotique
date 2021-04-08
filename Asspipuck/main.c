@@ -45,10 +45,12 @@ int main(void)
 	proximity_start();
 	calibrate_ir();
 
+
 while (1) {
 	move_forward(0.5,500);
 	chThdSleepMilliseconds(3000);
 }
+
 }
 
 
