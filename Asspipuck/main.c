@@ -45,22 +45,12 @@ int main(void)
 	proximity_start();
 	calibrate_ir();
 
-	int16_t speed=2000;
-
-
 	/* Infinite loop. */
 	while (1) {
 
-		left_motor_set_speed(speed);
-		right_motor_set_speed(speed);
-		if (colision_detected()){
-			chprintf((BaseSequentialStream *)&SD3, "angle of reflection : %f \r\n",angle_reflection (angle_colision ()) );
-			rotate_rad(angle_reflection (angle_colision ()),speed);
-		}
-		left_motor_set_speed(speed);
-		right_motor_set_speed(speed);
+		move_forward(0.5, 500);
 		//waits 10 ms
-		chThdSleepMilliseconds(10);
+		chThdSleepMilliseconds(1000);
 	}
 }
 

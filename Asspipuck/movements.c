@@ -11,6 +11,7 @@
 
 #include <motors.h>
 #include <movements.h>
+#include <ir_sensor.h>
 
 #define NSTEP_ONE_TURN      1000	//number of steps needed to do a full turn of the wheel
 #define WHEEL_DISTANCE      5.35f	//cm (the distance between the two wheels)
@@ -18,6 +19,8 @@
 #define WHEEL_PERIMETER     13
 #define TURN_STEP			(PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN //nb steps for one full turn
 #define MAX_ANGLE			360
+#define PAS_CM 				1
+#define PAS_VIT				500
 
 static float SIN[MAX_ANGLE];
 static float COS[MAX_ANGLE];
@@ -78,7 +81,7 @@ static THD_FUNCTION(RobotPosition, arg) {
  * @param angle angle of rotation (in rad)
  * @param speed speed of rotation (in step/s)
  */
-void rotate_rad(float angle, float speed)
+void rotate_rad(float angle, uint16_t speed)
 {
 	left_motor_set_pos(0);
 	right_motor_set_pos(0);
@@ -134,7 +137,7 @@ float angle_reflection (float angle_colision){
  * @param 	speed_l speed of the left wheel (in step/s)
  */
 
-void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
+void position_mode(float pos_r, float pos_l, uint16_t speed_r,  uint16_t speed_l)
 {
 	bool stop_r=false;
 	bool stop_l=false;
@@ -160,6 +163,23 @@ void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
 	}
 
 }
+
+
+
+
+/**
+ * @brief	moves the robot forward with a certain speed
+ *
+ * @param 	distance (in cm) : distance to travel
+ * @param 	speed ((in step/s): speed of travel
+
+ */
+
+void move_forward(float distance, uint16_t speed )
+{
+	position_mode(distance, distance, speed, speed);
+}
+
 
 
 /**
@@ -209,4 +229,48 @@ void robot_position_start(void){
 	init_cos();
 	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
 }
+
+
+
+void turn_around_clockwise(void)
+{
+
+	while(1)
+	{
+		if (!sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
+			{
+			move_forward(PAS_CM, PAS_VIT);
+			continue;
+			}
+		if (sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
+		{
+			rotate_rad(M_PI/12, PAS_VIT);
+			continue;
+		}
+
+
+
+
+
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

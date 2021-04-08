@@ -10,6 +10,20 @@
 
 #include <stdbool.h>
 
+
+
+
+typedef enum{
+  SENSOR_1,
+  SENSOR_2,
+  SENSOR_3,
+  SENSOR_4,
+  SENSOR_5,
+  SENSOR_6,
+  SENSOR_7,
+  SENSOR_8,
+}sensors_t;
+
 /**
  * @brief	gives the angle of incidence when collinding with a surface
  *
@@ -25,6 +39,25 @@ float angle_colision (void);
  */
 
 bool colision_detected (void);
+
+/**
+ * @brief	returns detected value of the sensor
+ *
+ * @param	sensor that we want the value of
+ */
+
+float sensor_detection(sensors_t sensor);
+
+/**
+ * @brief	detect if a sensor is in close proximity
+ * 			of an obstacle
+ *
+ * @param 	sensor to check the proximity of
+ * @return	true if in proximity and false otherwise
+ */
+
+bool sensor_close_obstacle (sensors_t sensor);
+
 
 
 
