@@ -124,7 +124,15 @@ float angle_reflection (float angle_colision){
 		return M_PI+2*angle_colision;
 	}
 }
-
+/**
+ * @brief	moves the right wheel by pos_r with a speed of speed_r
+ * 			moves the left wheel by pos_l with a speed of speed_l
+ *
+ * @param 	pos_r right position (distance) to achieve (in cm)
+ * @param 	pos_l left position (distance) to achieve (in cm)
+ * @param 	speed_r speed of the right wheel (in step/s)
+ * @param 	speed_l speed of the left wheel (in step/s)
+ */
 
 void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l)
 {
