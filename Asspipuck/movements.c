@@ -17,10 +17,59 @@
 #define PERIMETER_EPUCK     (M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     13
 #define TURN_STEP			(PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN //nb steps for one full turn
+#define MAX_ANGLE			360
 
+static float SIN[MAX_ANGLE];
+static float COS[MAX_ANGLE];
 
+static float x=0;
+static float y=0;
+static int16_t angle=0;
 
-//////////Public functions//////////
+//////////Private functions//////////
+
+void init_sin (void){
+	for (uint16_t i=0; i<MAX_ANGLE; i++){
+		SIN[i]=sinf(i*M_PI/180);
+	}
+}
+
+void init_cos (void){
+	for (uint16_t i=0; i<MAX_ANGLE; i++){
+		COS[i]=cosf(i*M_PI/180);
+	}
+}
+
+static THD_WORKING_AREA(waRobotPosition, 256);
+static THD_FUNCTION(RobotPosition, arg) {
+
+	chRegSetThreadName(__FUNCTION__);
+	(void)arg;
+
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+
+	int32_t amplitude =0;
+
+	while(1){
+		chThdSleepMilliseconds(10);
+		amplitude = get_translation();
+		angle+= get_angle();
+		angle %= MAX_ANGLE;
+		if (angle<0){
+			angle +=360;
+		}
+
+		x+=amplitude*COS[angle];
+		y-=amplitude*SIN[angle];
+
+		left_motor_set_pos(0);
+		right_motor_set_pos(0);
+
+	}
+}
+
+//////////Public functions/////////
 
 
 /**
@@ -74,4 +123,53 @@ float angle_reflection (float angle_colision){
 	else{
 		return M_PI+2*angle_colision;
 	}
+}
+
+
+/**
+ * @brief	returns the translation of the epuck from the initalization point
+ *
+ * @return	the translation in cm
+ */
+float get_translation (void){
+	return step_to_cm((left_motor_get_pos+right_motor_get_pos)/2);
+
+}
+
+/**
+ * @brief	returns the angle of rotation of the epuck from the initalization point
+ *
+ * @return	the angle of rotation in rad
+ */
+int32_t get_rotation (void){
+	return (-left_motor_get_pos+right_motor_get_pos)*180/TURN_STEP;
+}
+
+/**
+ * @brief	converts a distance given in number of steps to a distance in cm
+ *
+ * @param 	nb_step 	distance in number of steps.
+ * @return	distance in cm
+ */
+float step_to_cm (uint32_t nb_step){
+	return nb_step*WHEEL_PERIMETER/TURN_STEP;
+
+}
+
+float get_x() {
+	return x;
+}
+
+float get_y() {
+	return y;
+}
+
+int16_t get_angle() {
+	return angle;
+}
+
+void robot_position_start(void){
+	init_sin();
+	init_cos();
+	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
 }
