@@ -50,11 +50,10 @@ float step_to_cm (int32_t nb_step);
 
 float get_x(void);
 
-<<<<<<< HEAD
-float get_y();
-=======
+
+
 float get_y(void);
->>>>>>> origin/main
+
 
 int16_t get_angle(void);
 
@@ -69,6 +68,17 @@ void robot_position_start(void);
  * @return	the angle with which the epuck must turn (in rad)
  */
 void position_mode(float pos_r, float pos_l, uint16_t speed_r,  uint16_t speed_l);
+
+
+
+/**
+ * @brief	moves the robot forward with a certain speed
+ *
+ * @param 	distance (in cm) : distance to travel
+ * @param 	speed ((in step/s): speed of travel
+
+ */
+void move_forward(float distance, uint16_t speed );
 
 
 #endif /* MOVEMENTS_H_ */
