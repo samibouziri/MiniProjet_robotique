@@ -26,6 +26,35 @@ void rotate_rad(float angle, float speed);
  */
 float angle_reflection (float angle_colision);
 
+/**
+ * @brief	returns the translation of the epuck from the initalization point
+ *
+ * @return	the translation in cm
+ */
+float get_translation (void);
+
+/**
+ * @brief	returns the angle of rotation of the epuck from the initalization point
+ *
+ * @return	the angle of rotation in rad
+ */
+int32_t get_rotation (void);
+
+/**
+ * @brief	converts a distance given in number of steps to a distance in cm
+ *
+ * @param 	nb_step 	distance in number of steps.
+ * @return	distance in cm
+ */
+float step_to_cm (uint32_t nb_step);
+
+float get_x();
+
+float get_y());
+
+int16_t get_angle();
+
+void robot_position_start(void);
 
 
 void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l);
