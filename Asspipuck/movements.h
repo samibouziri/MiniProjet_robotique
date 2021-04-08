@@ -27,4 +27,8 @@ void rotate_rad(float angle, float speed);
 float angle_reflection (float angle_colision);
 
 
+
+void position_mode(float pos_r, float pos_l, float speed_r,  float speed_l);
+
+
 #endif /* MOVEMENTS_H_ */
