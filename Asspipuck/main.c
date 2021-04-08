@@ -62,9 +62,9 @@ int main(void)
 		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
 		position_mode(-10, -10, speed,  speed);
 		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		rotate_rad(-M_PI/2, speed);
+		rotate_rad(-M_PI/12, speed);
 		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		rotate_rad(M_PI/2, speed);
+		rotate_rad(M_PI/12, speed);
 		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
 		//waits 3 sec
 		chThdSleepMilliseconds(4000);

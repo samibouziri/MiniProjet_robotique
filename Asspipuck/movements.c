@@ -174,7 +174,7 @@ float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos)
  * @return	the angle of rotation in rad
  */
 int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos){
-	return ((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))*180/TURN_STEP;
+	return ((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))*180/NSTEP_ONE_TURN;
 }
 
 /**
