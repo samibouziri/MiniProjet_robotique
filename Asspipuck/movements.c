@@ -245,10 +245,16 @@ void turn_around_clockwise(void)
 			rotate_rad(M_PI/12, PAS_VIT);
 			continue;
 			}
-
-
-
-
+		if (!sensor_close_obstacle(SENSOR_1) && !sensor_close_obstacle(SENSOR_3) )
+		{
+			rotate_rad(-M_PI/12, PAS_VIT);
+			continue;
+		}
+		if (sensor_close_obstacle(SENSOR_1) && !sensor_close_obstacle(SENSOR_3) )
+		{
+			rotate_rad(M_PI/12, PAS_VIT);
+			continue;
+		}
 
 	}
 
