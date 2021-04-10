@@ -22,12 +22,11 @@
 #define PERIMETER_EPUCK     (M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     13.f
 #define TURN_STEP			(PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN //nb steps for one full turn
-#define MAX_ANGLE			360
 #define PAS_CM 				1
 #define PAS_VIT				500
 
-static float SIN[MAX_ANGLE];
-static float COS[MAX_ANGLE];
+static float SIN[NSTEP_ONE_TURN];
+static float COS[NSTEP_ONE_TURN];
 
 static float x=0;
 static float y=0;
@@ -36,15 +35,15 @@ static int16_t angle=0;
 //////////Private functions//////////
 
 void init_sin (void){
-	for (uint16_t i=0; i<MAX_ANGLE; i++){
-		SIN[i]=sinf(i*M_PI/180);
+	for (uint16_t i=0; i<NSTEP_ONE_TURN; i++){
+		SIN[i]=sinf(i*2*M_PI/NSTEP_ONE_TURN);
 		chprintf((BaseSequentialStream *)&SD3, "sin[%d]=%f",i,SIN[i]);
 	}
 }
 
 void init_cos (void){
-	for (uint16_t i=0; i<MAX_ANGLE; i++){
-		COS[i]=cosf(i*M_PI/180);
+	for (uint16_t i=0; i<NSTEP_ONE_TURN; i++){
+		COS[i]=cosf(i*2*M_PI/NSTEP_ONE_TURN);
 		chprintf((BaseSequentialStream *)&SD3, "cos[%d]=%f",i,COS[i]);
 	}
 }
@@ -66,9 +65,9 @@ static THD_FUNCTION(RobotPosition, arg) {
 		angle+= get_rotation(last_right_motor_pos,last_left_motor_pos);
 		last_right_motor_pos=right_motor_get_pos();
 		last_left_motor_pos=left_motor_get_pos();
-		angle %= MAX_ANGLE;
+		angle %= NSTEP_ONE_TURN;
 		if (angle<0){
-			angle +=360;
+			angle +=NSTEP_ONE_TURN;
 		}
 
 		x+=amplitude*COS[angle];
@@ -88,9 +87,9 @@ static THD_FUNCTION(RobotPosition, arg) {
  * @param angle angle of rotation (in rad)
  * @param speed speed of rotation (in step/s)
  */
-void rotate_rad(float angle, uint16_t speed)
+void rotate_rad(float alpha, int16_t speed)
 {
-	position_mode(angle*WHEEL_DISTANCE/2, -angle*WHEEL_DISTANCE/2, abs(speed),  abs(speed));
+	position_mode(alpha*WHEEL_DISTANCE/2, -alpha*WHEEL_DISTANCE/2, abs(speed),  abs(speed));
 
 }
 
@@ -124,7 +123,7 @@ float angle_reflection (float angle_colision){
  * @param 	speed_l speed of the left wheel (in step/s)
  */
 
-void position_mode(float pos_r, float pos_l, uint16_t speed_r,  uint16_t speed_l)
+void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 {
 	bool stop_r=false;
 	bool stop_l=false;
@@ -194,7 +193,10 @@ float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos)
  * @return	the angle of rotation in rad
  */
 int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos){
-	return ((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))*180/NSTEP_ONE_TURN;
+	int16_t alpha =((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))/2%NSTEP_ONE_TURN;
+	if (alpha<0)
+		alpha +=NSTEP_ONE_TURN;
+	return alpha;
 }
 
 /**
