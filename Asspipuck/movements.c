@@ -246,8 +246,86 @@ void turn_around_clockwise(void)
 			{
 			rotate_rad(M_PI/12, PAS_VIT);
 			continue;
+
+void turn_around_clockwise_speed(void)
+{
+
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+		//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+			chprintf((BaseSequentialStream *)&SD3, "1 \r\n");
+			return;
+		}
+		if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+				{
+					right_motor_set_speed(PAS_VIT+600);
+					left_motor_set_speed(-PAS_VIT-600);
+					//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+					chprintf((BaseSequentialStream *)&SD3, "2 if \r\n");
+					return;
+				}
+
+		/*	if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
+					{
+						right_motor_set_speed(PAS_VIT+600);
+						left_motor_set_speed(-PAS_VIT-600);
+						//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+						//	chprintf((BaseSequentialStream *)&SD3, "cas5 \r\n");
+						continue;
+					}
+		*/
+			right_motor_set_speed(PAS_VIT-600);
+			left_motor_set_speed(PAS_VIT+600);
+	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
+	//		rotate_rad(-PAS_RAD, PAS_VIT);
+			chprintf((BaseSequentialStream *)&SD3, "2 normal \r\n");
+			return;
+		}
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+	//		position_mode(PAS_CM, 0, PAS_VIT, 0);
+			chprintf((BaseSequentialStream *)&SD3, "3 \r\n");
+			return;
+		}
+
+		if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+			{
+				right_motor_set_speed(PAS_VIT+600);
+				left_motor_set_speed(-PAS_VIT-600);
+				//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				chprintf((BaseSequentialStream *)&SD3, "4 \r\n");
+				return;
 			}
-		if (!sensor_close_obstacle(SENSOR_1) && !sensor_close_obstacle(SENSOR_3) )
+
+		right_motor_set_speed(PAS_VIT);
+		left_motor_set_speed(PAS_VIT);
+		chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+
+		if (sensor_close_obstacle(SENSOR_3,2*CLOSE_THR))
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(PAS_VIT-600);
+			chprintf((BaseSequentialStream *)&SD3, "6 \r\n");
+			return;
+		}
+
+		if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+			//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				chprintf((BaseSequentialStream *)&SD3, "7 \r\n");
+			return;
+		}
+
+}
 		{
 			rotate_rad(-M_PI/12, PAS_VIT);
 			continue;
