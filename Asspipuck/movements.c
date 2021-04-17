@@ -70,7 +70,7 @@ static THD_FUNCTION(RobotPosition, arg) {
 		last_left_motor_pos=left_motor_get_pos();
 		x+=amplitude*cosf(angle);
 		y+=amplitude*sinf(angle);
-		chprintf((BaseSequentialStream *)&SD3, "x: %f y: %f \n\r",x,y);
+		//chprintf((BaseSequentialStream *)&SD3, "x: %f y: %f \n\r",x,y);
 	//	chprintf((BaseSequentialStream *)&SD3, "angle: %f \n\r",get_angle());
 		 chThdSleepUntilWindowed(time, time + MS2ST(10));
 	//	 chprintf((BaseSequentialStream *)&SD3, "time: %d \n\r",chVTGetSystemTime()-time);
@@ -120,7 +120,8 @@ void return_home(void){
 							alpha -=2*M_PI;
 						if (alpha<=-M_PI)
 							alpha +=2*M_PI;
-				}while (is_path_free(alpha) && !stop);
+					chprintf((BaseSequentialStream *)&SD3, "angle1: %f \n\r",alpha*180/M_PI);
+				}while (!(alpha>M_PI/4 && alpha< 3*M_PI/4) && !stop);
 			}
 			else{
 				do{
@@ -131,10 +132,12 @@ void return_home(void){
 						alpha -=2*M_PI;
 					if (alpha<=-M_PI)
 						alpha +=2*M_PI;
-				}while (is_path_free(alpha) && !stop);
+					chprintf((BaseSequentialStream *)&SD3, "angle2: %f condition: %d \n\r",alpha*180/M_PI,(alpha>-3*M_PI/4 && alpha< -M_PI/4));
+				}while (!(alpha>-3*M_PI/4 && alpha< -M_PI/4) && !stop);
 			}
 			arrived=false;
 		}
+		chprintf((BaseSequentialStream *)&SD3, "je suis sortie \n\r");
 		right_motor_set_speed(0);
 		left_motor_set_speed(0);
 	}while (!arrived && !stop);
