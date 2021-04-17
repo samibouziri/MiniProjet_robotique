@@ -40,18 +40,46 @@ int main(void)
 	//starts the serial communication
 	serial_start();
 
+
+	chThdSleepMilliseconds(2000);
 	//inits the motors
 	motors_init();
 	proximity_start();
 	calibrate_ir();
+	bool rotate=search_obstacle();
+
+	//chThdSleepMilliseconds(1000);
 
 
-while (1) {
-	move_forward(0.5,500);
-	chThdSleepMilliseconds(3000);
+//	chprintf((BaseSequentialStream *)&SD3, "sensor1 = %d cm \r\n",sensor_close_obstacle(SENSOR_1));
+//	chprintf((BaseSequentialStream *)&SD3, "sensor3 = %d cm \r\n",sensor_detection(SENSOR_3));
+
+	//turn_around_clockwise_speed();
+	//chThdSleepMilliseconds(10);
+	if (rotate)
+	{
+		while (1)
+	{
+		turn_around_clockwise_speed();
+		chThdSleepMilliseconds(15);
+	}
+	}
+	else
+	{
+		while (1)
+		{
+			turn_around_anticlockwise_speed();
+			chThdSleepMilliseconds(15);
+		}
+	}
+	//turn_around_clockwise_speed();
+	//change_state ();
+	//state_move ();
+
+
 }
 
-}
+
 
 
 #define STACK_CHK_GUARD 0xe2dee396

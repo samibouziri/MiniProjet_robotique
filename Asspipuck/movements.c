@@ -21,9 +21,12 @@
 #define WHEEL_DISTANCE      5.35f	//cm (the distance between the two wheels)
 #define PERIMETER_EPUCK     (M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     13.f
-#define TURN_STEP			(PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN //nb steps for one full turn
-#define PAS_CM 				1
-#define PAS_VIT				500
+#define TURN_STEP			((PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN) //nb steps for one full turn
+#define PAS_CM 				0.1f
+#define PAS_RAD 			M_PI/100.f
+#define PAS_VIT				1000
+#define CLOSE_THR			100 //// turn back to 220
+#define ROT_THR				400
 
 static float SIN[NSTEP_ONE_TURN];
 static float COS[NSTEP_ONE_TURN];
@@ -31,6 +34,16 @@ static float COS[NSTEP_ONE_TURN];
 static float x=0;
 static float y=0;
 static int16_t angle=0;
+
+typedef enum{
+	turn_right,
+	turn_left,
+	follow_wall,
+	hard_left,
+	hard_right,
+}state_t;
+
+static state_t state;
 
 //////////Private functions//////////
 
@@ -230,6 +243,9 @@ void robot_position_start(void){
 	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
 }
 
+/**
+ * @brief	turns in circle around an obstacle clockwise
+ *			in position mode
 
 
 void turn_around_clockwise(void)
@@ -237,15 +253,53 @@ void turn_around_clockwise(void)
 
 	while(1)
 	{
-		if (!sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
-			{
+		if (!sensor_close_obstacle(SENSOR_1,CLOSE_THR) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+
 			move_forward(PAS_CM, PAS_VIT);
+			//chprintf((BaseSequentialStream *)&SD3, "cas1.\r\n");
 			continue;
-			}
-		if (sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
+		}
+		if (sensor_close_obstacle(SENSOR_1,CLOSE_THR) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//chprintf((BaseSequentialStream *)&SD3, "cas2 \r\n");
+			//	move_forward(PAS_CM, PAS_VIT);
+			continue;
+		}
+		if (!sensor_close_obstacle(SENSOR_1,CLOSE_THR) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
 			{
-			rotate_rad(M_PI/12, PAS_VIT);
+				position_mode(PAS_CM, 0, PAS_VIT, 0);
+				continue;
+			}
+			if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
+			{
+				position_mode(0, PAS_CM, 0, PAS_VIT);
+				continue;
+			}
+
+
+			position_mode(0, PAS_CM, 0 ,PAS_VIT );
+			//	chprintf((BaseSequentialStream *)&SD3, "cas3 \r\n");
+			//	rotate_rad(-PAS_RAD, PAS_VIT);
 			continue;
+		}
+		if (sensor_close_obstacle(SENSOR_1,CLOSE_THR) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//	chprintf((BaseSequentialStream *)&SD3, "cas4 \r\n");
+			continue;
+		}
+
+	}
+}
+ */
+
+/*
+
+//  Marche /////////////////////////////////////////////////////////////
 
 void turn_around_clockwise_speed(void)
 {
@@ -279,7 +333,7 @@ void turn_around_clockwise_speed(void)
 						continue;
 					}
 		*/
-			right_motor_set_speed(PAS_VIT-600);
+/*			right_motor_set_speed(PAS_VIT-600);
 			left_motor_set_speed(PAS_VIT+600);
 	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
 	//		rotate_rad(-PAS_RAD, PAS_VIT);
@@ -326,30 +380,346 @@ void turn_around_clockwise_speed(void)
 		}
 
 }
+
+*/
+/*
+ *  copie au as ou la fonction ne marche plus. //////////////////////////////////////////////////////////////////
+ *
+void turn_around_clockwise_speed(void)
+{
+
+	while(1)
+	{
+
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
 		{
-			rotate_rad(-M_PI/12, PAS_VIT);
+
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+		//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//chprintf((BaseSequentialStream *)&SD3, "cas2 \r\n");
 			continue;
 		}
-		if (sensor_close_obstacle(SENSOR_1) && !sensor_close_obstacle(SENSOR_3) )
+		if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
 		{
-			rotate_rad(M_PI/12, PAS_VIT);
+			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+				{
+					right_motor_set_speed(PAS_VIT+600);
+					left_motor_set_speed(-PAS_VIT-600);
+					//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+					continue;
+				}
+
+			right_motor_set_speed(PAS_VIT-600);
+			left_motor_set_speed(PAS_VIT+600);
+	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
+			//	chprintf((BaseSequentialStream *)&SD3, "cas3 \r\n");
+			//	rotate_rad(-PAS_RAD, PAS_VIT);
+			continue;
+		}
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+	//		position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//	chprintf((BaseSequentialStream *)&SD3, "cas4 \r\n");
 			continue;
 		}
 
+		if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+			{
+				right_motor_set_speed(PAS_VIT+600);
+				left_motor_set_speed(-PAS_VIT-600);
+				//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				continue;
+			}
+
+		right_motor_set_speed(PAS_VIT);
+		left_motor_set_speed(PAS_VIT);
+
+		if (sensor_close_obstacle(SENSOR_3,2*CLOSE_THR))
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(PAS_VIT-600);
+			continue;
+		}
 	}
 
 }
 
 
 
+*/
+
+/*
+ * fonction de base//////////////////////////////////////////////////////////////////////////
+ *
+void turn_around_aclockwise_speed(void)
+{
+
+	while(1)
+	{
+
+		if (sensor_close_obstacle(SENSOR_1,CLOSE_THR) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+
+			right_motor_set_speed(PAS_VIT);
+			left_motor_set_speed(PAS_VIT/100);
+		//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//chprintf((BaseSequentialStream *)&SD3, "cas2 \r\n");
+			continue;
+		}
+		if (!sensor_close_obstacle(SENSOR_1,CLOSE_THR) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+				{
+					right_motor_set_speed(PAS_VIT);
+					left_motor_set_speed(PAS_VIT/100);
+					//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+					continue;
+				}
+
+			right_motor_set_speed(PAS_VIT/100);
+			left_motor_set_speed(PAS_VIT);
+	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
+			//	chprintf((BaseSequentialStream *)&SD3, "cas3 \r\n");
+			//	rotate_rad(-PAS_RAD, PAS_VIT);
+			continue;
+		}
+		if (sensor_close_obstacle(SENSOR_1,CLOSE_THR) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			right_motor_set_speed(PAS_VIT);
+			left_motor_set_speed(PAS_VIT/100);
+	//		position_mode(PAS_CM, 0, PAS_VIT, 0);
+			//	chprintf((BaseSequentialStream *)&SD3, "cas4 \r\n");
+			continue;
+		}
+
+		if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+			{
+				right_motor_set_speed(PAS_VIT);
+				left_motor_set_speed(PAS_VIT/100);
+				//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				continue;
+			}
+
+		right_motor_set_speed(PAS_VIT);
+		left_motor_set_speed(PAS_VIT);
+
+	}
+
+}
+
+
+*/
+
+
+void change_state (void)
+{
+	if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			!(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR))&&
+					!(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=turn_right;
+	}
+
+	else if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			!(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR))&&
+			!(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=hard_left;
+	}
+
+	else if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			!(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		if (sensor_close_obstacle(SENSOR_3,350) || sensor_close_obstacle(SENSOR_2,350)) state=turn_left;
+		else state=follow_wall;
+	}
+
+	else if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR))&&
+			!(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=turn_right;
+	}
+
+	else if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			!(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=hard_left;
+	}
+
+	else if  ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR))&&
+			!(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=hard_left;
+	}
+
+	else if  ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=hard_left;
+	}
+
+	else if  ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_6,CLOSE_THR)||sensor_close_obstacle(SENSOR_7,CLOSE_THR)) &&
+			(sensor_close_obstacle(SENSOR_3,CLOSE_THR)||sensor_close_obstacle(SENSOR_2,CLOSE_THR)) )
+	{
+		state=follow_wall;
+	}
+
+}
+
+void state_move (void)
+{
+switch (state)
+
+{
+case follow_wall:
+{
+	right_motor_set_speed(600);
+	left_motor_set_speed(600);
+	break;
+}
+case turn_right:
+{
+//	move_forward(1,500);
+	right_motor_set_speed(200);
+	left_motor_set_speed(1000);
+	break;
+}
+case turn_left :
+{
+	right_motor_set_speed(1000);
+	left_motor_set_speed(200);
+	break;
+}
+case hard_left :
+{
+	right_motor_set_speed(600);
+	left_motor_set_speed(-600);
+	break;
+}
+case hard_right :
+{
+	right_motor_set_speed(-600);
+	left_motor_set_speed(600);
+	break;
+}
+
+}
+}
 
 
 
+bool search_obstacle (void)
+{
+	while (!colision_detected())
+	{
+		right_motor_set_speed(800);
+		left_motor_set_speed(800);
+	}
+	if (angle_colision()<0)
+	{
+		rotate_rad(M_PI/2+angle_colision(),600);
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		return true;
+	}
+	else
+	{
+		rotate_rad(-M_PI/2+angle_colision(),600);
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		return false;
+	}
+}
 
 
+void turn_around_clockwise_speed(void){
+	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+
+		//	right_motor_set_speed(PAS_VIT-600);
+		//	left_motor_set_speed(PAS_VIT+600);
+		right_motor_set_speed(400);
+		left_motor_set_speed(1000);
+		//		chprintf((BaseSequentialStream *)&SD3, "soft right \r\n");
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2+40,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+			right_motor_set_speed(800);
+			left_motor_set_speed(-800);
+			//		chprintf((BaseSequentialStream *)&SD3, "2 \r\n");
+			return;
+		}
+		right_motor_set_speed(600);
+		left_motor_set_speed(600);
+		//	chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+		return;
+	}
+	else {
+		left_motor_set_speed(-800);
+		right_motor_set_speed(800);
+		//	chprintf((BaseSequentialStream *)&SD3, "hard left \r\n");
+	}
 
 
+}
 
+void turn_around_anticlockwise_speed(void){
+	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+
+		//	right_motor_set_speed(PAS_VIT-600);
+		//	left_motor_set_speed(PAS_VIT+600);
+		right_motor_set_speed(1000);
+		left_motor_set_speed(400);
+		//		chprintf((BaseSequentialStream *)&SD3, "soft left \r\n");
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR+40)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+			right_motor_set_speed(-800);
+			left_motor_set_speed(800);
+			//		chprintf((BaseSequentialStream *)&SD3, "2 \r\n");
+			return;
+		}
+		right_motor_set_speed(600);
+		left_motor_set_speed(600);
+		//	chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+		return;
+	}
+	else {
+		left_motor_set_speed(800);
+		right_motor_set_speed(-800);
+		//	chprintf((BaseSequentialStream *)&SD3, "hard left \r\n");
+	}
+
+
+}
 
 
 

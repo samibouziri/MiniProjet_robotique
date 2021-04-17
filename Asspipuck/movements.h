@@ -17,6 +17,16 @@
 void rotate_rad(float angle, int16_t speed);
 
 /**
+ * @brief	moves the robot forward with a certain speed
+ *
+ * @param 	distance (in cm) : distance to travel
+ * @param 	speed ((in step/s): speed of travel
+
+ */
+
+void move_forward(float distance, uint16_t speed );
+
+/**
  * @brief	for a given angle of incidence of a collision with a
  * 			surface it returns the angle with which the e puck
  * 			should turn in order to be reflected
@@ -24,6 +34,7 @@ void rotate_rad(float angle, int16_t speed);
  * @param 	angle_colision 	angle of incidence of the epuck(in rad)
  * @return	the angle with which the epuck must turn (in rad)
  */
+
 float angle_reflection (float angle_colision);
 
 /**
@@ -68,6 +79,21 @@ void robot_position_start(void);
  * @return	the angle with which the epuck must turn (in rad)
  */
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
+
+
+
+/**
+ * @brief	turns in circle around an obstacle clockwise
+ *
+ */
+
+
+
+void turn_around_anticlockwise_speed(void);
+
+void turn_around_clockwise_speed(void);
+
+bool search_obstacle (void);
 
 
 #endif /* MOVEMENTS_H_ */
