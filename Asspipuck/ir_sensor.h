@@ -23,6 +23,7 @@ typedef enum{
 }sensors_t;
 
 typedef enum{
+ BACK,
  BACK_LEFT,
  LEFT,
  FRONT_LEFT,
@@ -60,7 +61,8 @@ bool colision_detected (void);
 
 bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold);
 
-region get_region(void);
+region get_region(float angle);
 
+bool is_path_free(float angle);
 
 #endif /* IR_SENSOR_H_ */

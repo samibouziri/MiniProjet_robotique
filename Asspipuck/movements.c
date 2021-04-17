@@ -24,10 +24,15 @@
 #define TURN_STEP			((PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN) //nb steps for one full turn
 #define PAS_VIT				1000
 #define CLOSE_THR			100
-
+#define EPSILON 			0.1f
 static float x=0;
 static float y=0;
 static float angle=0;
+
+static bool stop=0;
+static bool arrived=0;
+static bool changing_mode=0;
+
 
 static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
@@ -47,20 +52,92 @@ static THD_FUNCTION(RobotPosition, arg) {
 	int32_t last_left_motor_pos=0;
 
 	float amplitude =0;
+	systime_t time=chVTGetSystemTime();
 
+	chThdSleepMilliseconds(10);
 	while(1){
-		chThdSleepMilliseconds(10);
+		time=chVTGetSystemTime();
 		amplitude = get_translation(last_right_motor_pos,last_left_motor_pos);
 		angle+= get_rotation(last_right_motor_pos,last_left_motor_pos);
+		if (angle >M_PI){
+			angle -=2*M_PI;
+		}
+		if (angle <=-M_PI){
+			angle +=2*M_PI;
+		}
 		//chprintf((BaseSequentialStream *)&SD3, "step1=%f\n\r",angle*180/M_PI);
 		last_right_motor_pos=right_motor_get_pos();
 		last_left_motor_pos=left_motor_get_pos();
 		x+=amplitude*cosf(angle);
 		y+=amplitude*sinf(angle);
-
+		chprintf((BaseSequentialStream *)&SD3, "x: %f y: %f \n\r",x,y);
+	//	chprintf((BaseSequentialStream *)&SD3, "angle: %f \n\r",get_angle());
+		 chThdSleepUntilWindowed(time, time + MS2ST(10));
+	//	 chprintf((BaseSequentialStream *)&SD3, "time: %d \n\r",chVTGetSystemTime()-time);
 
 
 	}
+}
+
+bool allign_to_avoid (void){
+	if (angle_colision()<0)
+	{
+		rotate_rad(M_PI/2+angle_colision(),600);
+		return true;
+	}
+	else
+	{
+		rotate_rad(-M_PI/2+angle_colision(),600);
+		return false;
+	}
+}
+
+bool collinear(float x1,float x2,float y1,float y2){
+	if(abs(x1*y2-x2*y1)/sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))<EPSILON)
+		return true;
+	else
+		return false;
+}
+
+void return_home(void){
+	do
+	{
+		chBSemSignal(&detect_obstacle_sem);
+		go_to_xy (0,0,600);
+		if (!changing_mode){
+			stop=false;
+		}
+		if(!arrived && !stop){
+			float xs=x;
+			float ys=y;
+			float alpha=0;
+			if (allign_to_avoid ()){
+				do{
+					turn_around_clockwise_speed();
+					chThdSleepMilliseconds(15);
+					alpha =atan2f((-y),(-x))-angle;
+						if (alpha>M_PI)
+							alpha -=2*M_PI;
+						if (alpha<=-M_PI)
+							alpha +=2*M_PI;
+				}while (is_path_free(alpha) && !stop);
+			}
+			else{
+				do{
+					turn_around_anticlockwise_speed();
+					chThdSleepMilliseconds(15);
+					alpha =atan2f((-y),(-x))-angle;
+					if (alpha>M_PI)
+						alpha -=2*M_PI;
+					if (alpha<=-M_PI)
+						alpha +=2*M_PI;
+				}while (is_path_free(alpha) && !stop);
+			}
+			arrived=false;
+		}
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+	}while (!arrived && !stop);
 }
 
 //////////Public functions/////////
@@ -98,6 +175,9 @@ float angle_reflection (float angle_colision){
 		return M_PI+2*angle_colision;
 	}
 }
+
+
+
 /**
  * @brief	moves the right wheel by pos_r with a speed of speed_r
  * 			moves the left wheel by pos_l with a speed of speed_l
@@ -111,6 +191,7 @@ float angle_reflection (float angle_colision){
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 {
 	if (!stop){
+		arrived =0;
 		bool stop_r=false;
 		bool stop_l=false;
 
@@ -141,7 +222,10 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 				stop_l=true;
 				left_motor_set_speed(0);
 			}
-			if (stop_r && stop_l) break;
+			if (stop_r && stop_l) {
+				arrived =1;
+				break;
+			}
 		}
 	}
 	right_motor_set_speed(0);
@@ -228,11 +312,16 @@ float get_angle() {
 void robot_position_start(void){
 	left_motor_set_pos(0);
 	right_motor_set_pos(0);
-	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
+	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO+1, RobotPosition, NULL);
 }
 
 void go_to_xy (float abscisse, float ordonnee, int16_t speed){
-	rotate_rad( atan2f((ordonnee-y),(abscisse-x))-angle, speed);
+	float alpha =atan2f((ordonnee-y),(abscisse-x))-angle;
+		if (alpha>M_PI)
+			alpha -=2*M_PI;
+		if (alpha<=-M_PI)
+			alpha +=2*M_PI;
+	rotate_rad( alpha, speed);
 	move_forward( sqrt ((ordonnee-y)*(ordonnee-y)+(abscisse-x)*(abscisse-x)), speed );
 }
 /**
@@ -355,15 +444,17 @@ void turn_around_anticlockwise_speed(void){
 static THD_WORKING_AREA(waThdPermission, 1024);
 static THD_FUNCTION(ThdPermission, arg) {
 
-    chRegSetThreadName(__FUNCTION__);
-    (void)arg;
+	chRegSetThreadName(__FUNCTION__);
+	(void)arg;
 
-	while(1){
-
-			chThdSleepMilliseconds(2000);
-			chBSemSignal(&detect_obstacle_sem);
-			chThdSleepMilliseconds(10000);
-
+	while (1)
+	{
+		chBSemWait(&detect_obstacle_sem);
+		while (!colision_detected())
+		{
+			chThdSleepMilliseconds(10);
+		}
+		stop=true;
 	}
 }
 
@@ -395,7 +486,7 @@ static THD_FUNCTION(ThdRotate, arg) {
 
 void threads_start(void){
 	chThdCreateStatic(waThdPermission, sizeof(waThdPermission), NORMALPRIO, ThdPermission, NULL);
-	chThdCreateStatic(waThdRotate, sizeof(waThdRotate), NORMALPRIO, ThdRotate, NULL);
+//	chThdCreateStatic(waThdRotate, sizeof(waThdRotate), NORMALPRIO, ThdRotate, NULL);
 }
 
 

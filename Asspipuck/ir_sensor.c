@@ -92,31 +92,86 @@ bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold)
 
 }
 
-region get_region(){
-	float angle =angle_colision();
-	if (angle>-M_PI && angle<=-100*M_PI/180)
+region get_region(float angle){
+	if (angle>-M_PI && angle<=THETA3)
+		return BACK;
+
+	if (angle>THETA3 && angle<=THETA2)
 		return BACK_RIGHT;
 
-	if (angle>-100*M_PI/180 && angle<=-80*M_PI/180)
+	if (angle>THETA2 && angle<=THETA1)
 		return RIGHT;
 
-	if (angle>-80*M_PI/180 && angle<=(THETA1+THETA0)/2)
+	if (angle>THETA1 && angle<=THETA0)
 		return FRONT_RIGHT;
 
-	if (angle>(THETA1+THETA0)/2 && angle<=(THETA7+THETA6)/2)
+	if (angle>THETA0 && angle<=THETA7)
 		return FRONT;
 
-	if (angle>(THETA7+THETA6)/2 && angle<=80*M_PI/180)
+	if (angle>THETA7 && angle<=THETA6)
 		return FRONT_LEFT;
 
-	if (angle>80*M_PI/180 && angle<=100*M_PI/180)
+	if (angle>THETA6 && angle<=THETA5)
 		return LEFT;
 
-	return BACK_LEFT;
+	if (angle>THETA5 && angle<=THETA4)
+		return BACK_LEFT;
+
+	return BACK;
 
 }
 
-
-
-
-
+bool is_path_free(float angle){
+	switch (get_region(angle)){
+	case BACK:
+		if (get_calibrated_prox(3)<3 &&get_calibrated_prox(4)<3)
+			return true;
+		else
+			return false;
+		break;
+	case BACK_RIGHT:
+			if (get_calibrated_prox(2)<3 &&get_calibrated_prox(3)<3)
+				return true;
+			else
+				return false;
+			break;
+	case RIGHT:
+			if (get_calibrated_prox(1)<3 &&get_calibrated_prox(2)<3)
+				return true;
+			else
+				return false;
+			break;
+	case FRONT_RIGHT:
+			if (get_calibrated_prox(0)<3 &&get_calibrated_prox(1)<3)
+				return true;
+			else
+				return false;
+			break;
+	case FRONT:
+			if (get_calibrated_prox(7)<3 &&get_calibrated_prox(0)<3)
+				return true;
+			else
+				return false;
+			break;
+	case FRONT_LEFT:
+			if (get_calibrated_prox(6)<3 &&get_calibrated_prox(7)<3)
+				return true;
+			else
+				return false;
+			break;
+	case LEFT:
+			if (get_calibrated_prox(5)<3 &&get_calibrated_prox(6)<3)
+				return true;
+			else
+				return false;
+			break;
+	case BACK_LEFT:
+			if (get_calibrated_prox(4)<3 &&get_calibrated_prox(5)<3)
+				return true;
+			else
+				return false;
+			break;
+	default :
+		return false ;
+	}
+}

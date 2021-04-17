@@ -43,9 +43,7 @@ int main(void)
 	halInit();
 	chSysInit();
 	mpu_init();
-	chThdSleepMilliseconds(2000);
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
-	//starts the serial communication
 	serial_start();
 
 
@@ -54,7 +52,9 @@ int main(void)
 	motors_init();
 	proximity_start();
 	calibrate_ir();
-	//robot_position_start();
+	robot_position_start();
+	threads_start();
+	move_forward(100,1000);
 	//temp tab used to store values in complex_float format
 	//needed bx doFFT_c
 	/*static complex_float temp_tab[FFT_SIZE];
@@ -74,11 +74,15 @@ int main(void)
 
 		chThdSleepMilliseconds(4000);
 	}*/
-	search_obstacle();
+	//search_obstacle();
+	return_home();
+
+	//go_to_xy(0,0,600);
 	while (1){
-		turn_around_clockwise_speed();
+
+
 		//chprintf((BaseSequentialStream *)&SD3, "prox(2)= %d prox(3)= %d \r\n",get_calibrated_prox(1),get_calibrated_prox(2));
-		chThdSleepMilliseconds(15);
+		chThdSleepMilliseconds(1000);
 	}
 
 }
