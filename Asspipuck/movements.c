@@ -49,7 +49,7 @@ static THD_FUNCTION(RobotPosition, arg) {
 	float amplitude =0;
 
 	while(1){
-		chThdSleepMilliseconds(5);
+		chThdSleepMilliseconds(10);
 		amplitude = get_translation(last_right_motor_pos,last_left_motor_pos);
 		angle+= get_rotation(last_right_motor_pos,last_left_motor_pos);
 		//chprintf((BaseSequentialStream *)&SD3, "step1=%f\n\r",angle*180/M_PI);
@@ -110,39 +110,42 @@ float angle_reflection (float angle_colision){
 
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 {
-	bool stop_r=false;
-	bool stop_l=false;
+	if (!stop){
+		bool stop_r=false;
+		bool stop_l=false;
 
-	int32_t right_pos =right_motor_get_pos();
-	int32_t left_pos =left_motor_get_pos();
+		int32_t right_pos =right_motor_get_pos();
+		int32_t left_pos =left_motor_get_pos();
 
-	if (pos_r<0)
-		speed_r=-abs(speed_r);
-	else
-		speed_r=abs(speed_r);
-	if (pos_l<0)
-		speed_l=-abs(speed_l);
-	else
-		speed_l=abs(speed_l);
-	right_motor_set_speed(speed_r);
-	left_motor_set_speed(speed_l);
+		if (pos_r<0)
+			speed_r=-abs(speed_r);
+		else
+			speed_r=abs(speed_r);
+		if (pos_l<0)
+			speed_l=-abs(speed_l);
+		else
+			speed_l=abs(speed_l);
+		right_motor_set_speed(speed_r);
+		left_motor_set_speed(speed_l);
 
-	while (1)
-	{
-		if (abs(right_motor_get_pos()-right_pos)>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
+		while (!stop)
 		{
-			//chprintf((BaseSequentialStream *)&SD3, "step=%d\n\r",abs(right_motor_get_pos()-right_pos));
-			stop_r=true;
-			right_motor_set_speed(0);
+			if (abs(right_motor_get_pos()-right_pos)>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
+			{
+				//chprintf((BaseSequentialStream *)&SD3, "step=%d\n\r",abs(right_motor_get_pos()-right_pos));
+				stop_r=true;
+				right_motor_set_speed(0);
+			}
+			if (abs(left_motor_get_pos()-left_pos)>=abs(pos_l*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
+			{
+				stop_l=true;
+				left_motor_set_speed(0);
+			}
+			if (stop_r && stop_l) break;
 		}
-		if (abs(left_motor_get_pos()-left_pos)>=abs(pos_l*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
-		{
-			stop_l=true;
-			left_motor_set_speed(0);
-		}
-		if (stop_r && stop_l) break;
 	}
-
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
 }
 
 
@@ -362,6 +365,10 @@ static THD_FUNCTION(ThdPermission, arg) {
 			chThdSleepMilliseconds(10000);
 
 	}
+}
+
+void set_stop (bool stop_value){
+	stop =stop_value;
 }
 
 static THD_WORKING_AREA(waThdRotate, 1024);

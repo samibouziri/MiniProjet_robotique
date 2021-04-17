@@ -24,6 +24,8 @@ void rotate_rad(float angle, int16_t speed);
 
  */
 
+void move_forward(float distance, int16_t speed );
+
 /**
  * @brief	for a given angle of incidence of a collision with a
  * 			surface it returns the angle with which the e puck
@@ -56,16 +58,6 @@ float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
  * @return	distance in cm
  */
 float step_to_cm (int32_t nb_step);
-
-/**
- * @brief	moves the robot forward with a certain speed*5.35
- *
- * @param 	distance (in cm) : distance to travel
- * @param 	speed ((in step/s): speed of travel
-
- */
-
-void move_forward(float distance, int16_t speed );
 
 float get_x(void);
 
