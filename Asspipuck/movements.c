@@ -30,6 +30,16 @@ static float x=0;
 static float y=0;
 static float angle=0;
 
+typedef enum{
+	turn_right,
+	turn_left,
+	follow_wall,
+	hard_left,
+	hard_right,
+}state_t;
+
+static state_t state;
+
 //////////Private functions//////////
 
 static THD_WORKING_AREA(waRobotPosition, 256);
@@ -227,88 +237,12 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 	rotate_rad( atan2f((ordonnee-y),(abscisse-x))-angle, speed);
 	move_forward( sqrt ((ordonnee-y)*(ordonnee-y)+(abscisse-x)*(abscisse-x)), speed );
 }
-
-/*void turn_around_clockwise_speed(void)
-{
-
-		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
-		{
-
-			right_motor_set_speed(PAS_VIT+600);
-			left_motor_set_speed(-PAS_VIT-600);
-		//	position_mode(PAS_CM, 0, PAS_VIT, 0);
-			chprintf((BaseSequentialStream *)&SD3, "1 \r\n");
-			return;
-		}
-		if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
-		{
-			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
-				{
-					right_motor_set_speed(PAS_VIT+600);
-					left_motor_set_speed(-PAS_VIT-600);
-					//	position_mode(PAS_CM, 0, PAS_VIT, 0);
-					chprintf((BaseSequentialStream *)&SD3, "2 if \r\n");
-					return;
-				}
-
-		/*	if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
-					{
-						right_motor_set_speed(PAS_VIT+600);
-						left_motor_set_speed(-PAS_VIT-600);
-						//	position_mode(PAS_CM, 0, PAS_VIT, 0);
-						//	chprintf((BaseSequentialStream *)&SD3, "cas5 \r\n");
-						continue;
-					}
-
-			right_motor_set_speed(PAS_VIT-600);
-			left_motor_set_speed(PAS_VIT+600);
-	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
-	//		rotate_rad(-PAS_RAD, PAS_VIT);
-			chprintf((BaseSequentialStream *)&SD3, "2 normal \r\n");
-			return;
-		}
-		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
-		{
-			right_motor_set_speed(PAS_VIT+600);
-			left_motor_set_speed(-PAS_VIT-600);
-	//		position_mode(PAS_CM, 0, PAS_VIT, 0);
-			chprintf((BaseSequentialStream *)&SD3, "3 \r\n");
-			return;
-		}
-
-		if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
-			{
-				right_motor_set_speed(PAS_VIT+600);
-				left_motor_set_speed(-PAS_VIT-600);
-				//	position_mode(PAS_CM, 0, PAS_VIT, 0);
-				chprintf((BaseSequentialStream *)&SD3, "4 \r\n");
-				return;
-			}
+/**
+ * @brief	turns in circle around an obstacle clockwise
+ *			in position mode
+*/
 
 
-
-		if (sensor_close_obstacle(SENSOR_3,2*CLOSE_THR))
-		{
-			right_motor_set_speed(PAS_VIT+600);
-			left_motor_set_speed(-PAS_VIT-600);
-			chprintf((BaseSequentialStream *)&SD3, "6 \r\n");
-			return;
-		}
-
-		if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
-		{
-			right_motor_set_speed(PAS_VIT+600);
-			left_motor_set_speed(-PAS_VIT-600);
-			//	position_mode(PAS_CM, 0, PAS_VIT, 0);
-				chprintf((BaseSequentialStream *)&SD3, "7 \r\n");
-			return;
-		}
-
-		right_motor_set_speed(PAS_VIT);
-		left_motor_set_speed(PAS_VIT);
-		chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
-
-}*/
 
 void turn_around_clockwise_speed(void){
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
@@ -350,17 +284,27 @@ void turn_around_clockwise_speed(void){
 
 }
 
-void search_obstacle (void)
+bool search_obstacle (void)
 {
 	while (!colision_detected())
 	{
 		right_motor_set_speed(800);
 		left_motor_set_speed(800);
 	}
-
-	rotate_rad(M_PI/2+angle_colision(),600);
-	right_motor_set_speed(0);
-	left_motor_set_speed(0);
+	if (angle_colision()<0)
+	{
+		rotate_rad(M_PI/2+angle_colision(),600);
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		return true;
+	}
+	else
+	{
+		rotate_rad(-M_PI/2+angle_colision(),600);
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		return false;
+	}
 }
 
 
@@ -371,6 +315,45 @@ void search_obstacle (void)
 
 
 
+void turn_around_anticlockwise_speed(void){
+	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+
+		//	right_motor_set_speed(PAS_VIT-600);
+		//	left_motor_set_speed(PAS_VIT+600);
+		right_motor_set_speed(1000);
+		left_motor_set_speed(400);
+		//		chprintf((BaseSequentialStream *)&SD3, "soft left \r\n");
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR+40)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+			right_motor_set_speed(-800);
+			left_motor_set_speed(800);
+			//		chprintf((BaseSequentialStream *)&SD3, "2 \r\n");
+			return;
+		}
+		right_motor_set_speed(600);
+		left_motor_set_speed(600);
+		//	chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+		return;
+	}
+	else {
+		left_motor_set_speed(800);
+		right_motor_set_speed(-800);
+		//	chprintf((BaseSequentialStream *)&SD3, "hard left \r\n");
+	}
+
+
+}
 
 
 

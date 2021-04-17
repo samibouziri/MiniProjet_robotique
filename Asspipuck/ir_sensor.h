@@ -50,19 +50,13 @@ float angle_colision (void);
 
 bool colision_detected (void);
 
-/**
- * @brief	returns detected value of the sensor
- *
- * @param	sensor that we want the value of
- */
-
-float sensor_detection(sensors_t sensor);
 
 /**
  * @brief	detect if a sensor is in close proximity
- * 			of an obstacle
+ * 			of an obstacle with a certain threshold
  *
  * @param 	sensor to check the proximity of
+ * @param 	threshold to return true
  * @return	true if in proximity and false otherwise
  */
 

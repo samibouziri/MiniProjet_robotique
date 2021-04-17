@@ -23,7 +23,7 @@
 #define THETA6 		48.5*M_PI/180
 #define THETA7 		17.5*M_PI/180
 #define THRESHOLD 	200
-#define CLOSE_THR	100
+
 
 static const float COS_THETA []={cosf(THETA0) ,cosf(THETA1) ,cosf(THETA2) ,cosf(THETA3) ,cosf(THETA4) ,cosf(THETA5) ,cosf(THETA6) ,cosf(THETA7)};
 static const float SIN_THETA []={sinf(THETA0) ,sinf(THETA1) ,sinf(THETA2) ,sinf(THETA3) ,sinf(THETA4) ,sinf(THETA5) ,sinf(THETA6) ,sinf(THETA7)};
@@ -75,22 +75,13 @@ bool colision_detected (void){
 }
 
 
-/**
- * @brief	returns detected value of the sensor
- *
- * @param	sensor that we want the value of
- */
-float sensor_detection(sensors_t sensor)
-{
-return get_calibrated_prox(sensor);
-}
-
 
 /**
  * @brief	detect if a sensor is in close proximity
- * 			of an obstacle
+ * 			of an obstacle with a certain threshold
  *
  * @param 	sensor to check the proximity of
+ * @param 	threshold to return true
  * @return	true if in proximity and false otherwise
  */
 bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold)

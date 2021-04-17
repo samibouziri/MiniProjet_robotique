@@ -48,6 +48,8 @@ int main(void)
 	//starts the serial communication
 	serial_start();
 
+
+	chThdSleepMilliseconds(2000);
 	//inits the motors
 	motors_init();
 	proximity_start();
