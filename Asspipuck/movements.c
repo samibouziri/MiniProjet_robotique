@@ -30,15 +30,12 @@ static float x=0;
 static float y=0;
 static float angle=0;
 
-typedef enum{
-	turn_right,
-	turn_left,
-	follow_wall,
-	hard_left,
-	hard_right,
-}state_t;
+static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
-static state_t state;
+//signals an image has been captured
+chBSemSignal(&detect_obstacle_sem);
+//waits until an image has been captured
+chBSemWait(&detect_obstacle_sem);
 
 //////////Private functions//////////
 
