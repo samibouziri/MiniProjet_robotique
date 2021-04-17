@@ -11,8 +11,6 @@
 #include <stdbool.h>
 
 
-
-
 typedef enum{
   SENSOR_1,
   SENSOR_2,

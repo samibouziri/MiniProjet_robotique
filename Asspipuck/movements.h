@@ -24,8 +24,6 @@ void rotate_rad(float angle, int16_t speed);
 
  */
 
-void move_forward(float distance, uint16_t speed );
-
 /**
  * @brief	for a given angle of incidence of a collision with a
  * 			surface it returns the angle with which the e puck
@@ -92,7 +90,7 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
 
 void turn_around_clockwise_speed(void);
 
-void search_obstacle (void);
+bool search_obstacle (void);
 
 
 /**
@@ -100,13 +98,10 @@ void search_obstacle (void);
  *
  */
 
-
-
 void turn_around_anticlockwise_speed(void);
 
 void turn_around_clockwise_speed(void);
 
-bool search_obstacle (void);
-
+void threads_start(void);
 
 #endif /* MOVEMENTS_H_ */

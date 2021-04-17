@@ -22,7 +22,6 @@
 #define PERIMETER_EPUCK     (M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     13.f
 #define TURN_STEP			((PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN) //nb steps for one full turn
-#define PAS_CM 				1
 #define PAS_VIT				1000
 #define CLOSE_THR			100
 
@@ -32,10 +31,9 @@ static float angle=0;
 
 static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
-//signals an image has been captured
-chBSemSignal(&detect_obstacle_sem);
-//waits until an image has been captured
-chBSemWait(&detect_obstacle_sem);
+//static thread_t *Permission;
+//static thread_t *Rotate;
+
 
 //////////Private functions//////////
 
@@ -351,8 +349,47 @@ void turn_around_anticlockwise_speed(void){
 
 
 }
+static THD_WORKING_AREA(waThdPermission, 1024);
+static THD_FUNCTION(ThdPermission, arg) {
 
+    chRegSetThreadName(__FUNCTION__);
+    (void)arg;
 
+	while(1){
+
+			chThdSleepMilliseconds(2000);
+			chBSemSignal(&detect_obstacle_sem);
+			chThdSleepMilliseconds(10000);
+
+	}
+}
+
+static THD_WORKING_AREA(waThdRotate, 1024);
+static THD_FUNCTION(ThdRotate, arg) {
+
+    chRegSetThreadName(__FUNCTION__);
+    (void)arg;
+
+    systime_t time;
+	while(1)
+	{
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		chBSemWait(&detect_obstacle_sem);
+		time=chVTGetSystemTime();
+		while(chVTGetSystemTime()<(time+MS2ST(5000)))
+		{
+			turn_around_clockwise_speed();
+			chThdSleepMilliseconds(15);
+		}
+
+	}
+}
+
+void threads_start(void){
+	chThdCreateStatic(waThdPermission, sizeof(waThdPermission), NORMALPRIO, ThdPermission, NULL);
+	chThdCreateStatic(waThdRotate, sizeof(waThdRotate), NORMALPRIO, ThdRotate, NULL);
+}
 
 
 
