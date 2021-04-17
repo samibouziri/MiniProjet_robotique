@@ -24,7 +24,7 @@ void rotate_rad(float angle, int16_t speed);
 
  */
 
-void move_forward(float distance, uint16_t speed );
+void move_forward(float distance, int16_t speed );
 
 /**
  * @brief	for a given angle of incidence of a collision with a
@@ -59,16 +59,6 @@ float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
  */
 float step_to_cm (int32_t nb_step);
 
-/**
- * @brief	moves the robot forward with a certain speed*5.35
- *
- * @param 	distance (in cm) : distance to travel
- * @param 	speed ((in step/s): speed of travel
-
- */
-
-void move_forward(float distance, int16_t speed );
-
 float get_x(void);
 
 
@@ -92,7 +82,7 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
 
 void turn_around_clockwise_speed(void);
 
-void search_obstacle (void);
+bool search_obstacle (void);
 
 
 /**
@@ -108,5 +98,6 @@ void turn_around_clockwise_speed(void);
 
 bool search_obstacle (void);
 
+void set_stop (bool stop_value);
 
 #endif /* MOVEMENTS_H_ */
