@@ -21,32 +21,16 @@
 #define WHEEL_DISTANCE      5.35f	//cm (the distance between the two wheels)
 #define PERIMETER_EPUCK     (M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     13.f
-#define TURN_STEP			(PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN //nb steps for one full turn
+#define TURN_STEP			((PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN) //nb steps for one full turn
 #define PAS_CM 				1
-#define PAS_VIT				500
-
-static float SIN[NSTEP_ONE_TURN];
-static float COS[NSTEP_ONE_TURN];
+#define PAS_VIT				1000
+#define CLOSE_THR			100
 
 static float x=0;
 static float y=0;
-static int16_t angle=0;
+static float angle=0;
 
 //////////Private functions//////////
-
-void init_sin (void){
-	for (uint16_t i=0; i<NSTEP_ONE_TURN; i++){
-		SIN[i]=sinf(i*2*M_PI/NSTEP_ONE_TURN);
-		chprintf((BaseSequentialStream *)&SD3, "sin[%d]=%f",i,SIN[i]);
-	}
-}
-
-void init_cos (void){
-	for (uint16_t i=0; i<NSTEP_ONE_TURN; i++){
-		COS[i]=cosf(i*2*M_PI/NSTEP_ONE_TURN);
-		chprintf((BaseSequentialStream *)&SD3, "cos[%d]=%f",i,COS[i]);
-	}
-}
 
 static THD_WORKING_AREA(waRobotPosition, 256);
 static THD_FUNCTION(RobotPosition, arg) {
@@ -60,18 +44,14 @@ static THD_FUNCTION(RobotPosition, arg) {
 	float amplitude =0;
 
 	while(1){
-		chThdSleepMilliseconds(10);
+		chThdSleepMilliseconds(5);
 		amplitude = get_translation(last_right_motor_pos,last_left_motor_pos);
 		angle+= get_rotation(last_right_motor_pos,last_left_motor_pos);
+		//chprintf((BaseSequentialStream *)&SD3, "step1=%f\n\r",angle*180/M_PI);
 		last_right_motor_pos=right_motor_get_pos();
 		last_left_motor_pos=left_motor_get_pos();
-		angle %= NSTEP_ONE_TURN;
-		if (angle<0){
-			angle +=NSTEP_ONE_TURN;
-		}
-
-		x+=amplitude*COS[angle];
-		y+=amplitude*SIN[angle];
+		x+=amplitude*cosf(angle);
+		y+=amplitude*sinf(angle);
 
 
 
@@ -146,6 +126,7 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 	{
 		if (abs(right_motor_get_pos()-right_pos)>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
 		{
+			//chprintf((BaseSequentialStream *)&SD3, "step=%d\n\r",abs(right_motor_get_pos()-right_pos));
 			stop_r=true;
 			right_motor_set_speed(0);
 		}
@@ -163,18 +144,35 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 
 
 /**
- * @brief	moves the robot forward with a certain speed
+ * @brief	moves the robot forward with a certain speed*5.35
  *
  * @param 	distance (in cm) : distance to travel
  * @param 	speed ((in step/s): speed of travel
 
  */
-
-void move_forward(float distance, uint16_t speed )
+void move_forward(float distance,  int16_t speed )
 {
 	position_mode(distance, distance, speed, speed);
 }
 
+void move_forward_speed( int16_t speed )
+{
+	right_motor_set_speed(speed);
+	left_motor_set_speed(speed);
+}
+
+void turn_right( int16_t speed )
+{
+	right_motor_set_speed(speed/2);
+	left_motor_set_speed(speed*2);
+}
+
+
+void rotate_left ( int16_t speed )
+{
+	right_motor_set_speed(speed);
+	left_motor_set_speed(-speed);
+}
 
 
 /**
@@ -192,11 +190,8 @@ float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos)
  *
  * @return	the angle of rotation in rad
  */
-int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos){
-	int16_t alpha =((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))/2%NSTEP_ONE_TURN;
-	if (alpha<0)
-		alpha +=NSTEP_ONE_TURN;
-	return alpha;
+float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos){
+	return ((right_motor_get_pos()-last_right_motor_pos)-(left_motor_get_pos()-last_left_motor_pos))/WHEEL_DISTANCE*WHEEL_PERIMETER/NSTEP_ONE_TURN;
 }
 
 /**
@@ -218,45 +213,155 @@ float get_y() {
 	return y;
 }
 
-int16_t get_angle() {
-	return angle;
+float get_angle() {
+	return angle*180/M_PI;
 }
 
 void robot_position_start(void){
-	init_sin();
-	init_cos();
 	left_motor_set_pos(0);
 	right_motor_set_pos(0);
 	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO, RobotPosition, NULL);
 }
 
+void go_to_xy (float abscisse, float ordonnee, int16_t speed){
+	rotate_rad( atan2f((ordonnee-y),(abscisse-x))-angle, speed);
+	move_forward( sqrt ((ordonnee-y)*(ordonnee-y)+(abscisse-x)*(abscisse-x)), speed );
+}
 
-
-void turn_around_clockwise(void)
+/*void turn_around_clockwise_speed(void)
 {
 
-	while(1)
-	{
-		if (!sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
-			{
-			move_forward(PAS_CM, PAS_VIT);
-			continue;
-			}
-		if (sensor_close_obstacle(SENSOR_1) && sensor_close_obstacle(SENSOR_3) )
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
 		{
-			rotate_rad(M_PI/12, PAS_VIT);
-			continue;
+
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+		//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+			chprintf((BaseSequentialStream *)&SD3, "1 \r\n");
+			return;
+		}
+		if ( !(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+				{
+					right_motor_set_speed(PAS_VIT+600);
+					left_motor_set_speed(-PAS_VIT-600);
+					//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+					chprintf((BaseSequentialStream *)&SD3, "2 if \r\n");
+					return;
+				}
+
+		/*	if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
+					{
+						right_motor_set_speed(PAS_VIT+600);
+						left_motor_set_speed(-PAS_VIT-600);
+						//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+						//	chprintf((BaseSequentialStream *)&SD3, "cas5 \r\n");
+						continue;
+					}
+
+			right_motor_set_speed(PAS_VIT-600);
+			left_motor_set_speed(PAS_VIT+600);
+	//		position_mode(0, PAS_CM, 0 ,PAS_VIT );
+	//		rotate_rad(-PAS_RAD, PAS_VIT);
+			chprintf((BaseSequentialStream *)&SD3, "2 normal \r\n");
+			return;
+		}
+		if ( (sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR)) && !sensor_close_obstacle(SENSOR_3,CLOSE_THR) )
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+	//		position_mode(PAS_CM, 0, PAS_VIT, 0);
+			chprintf((BaseSequentialStream *)&SD3, "3 \r\n");
+			return;
 		}
 
+		if (sensor_close_obstacle(SENSOR_2,CLOSE_THR))
+			{
+				right_motor_set_speed(PAS_VIT+600);
+				left_motor_set_speed(-PAS_VIT-600);
+				//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				chprintf((BaseSequentialStream *)&SD3, "4 \r\n");
+				return;
+			}
 
 
 
+		if (sensor_close_obstacle(SENSOR_3,2*CLOSE_THR))
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+			chprintf((BaseSequentialStream *)&SD3, "6 \r\n");
+			return;
+		}
 
+		if (sensor_close_obstacle(SENSOR_7,CLOSE_THR))
+		{
+			right_motor_set_speed(PAS_VIT+600);
+			left_motor_set_speed(-PAS_VIT-600);
+			//	position_mode(PAS_CM, 0, PAS_VIT, 0);
+				chprintf((BaseSequentialStream *)&SD3, "7 \r\n");
+			return;
+		}
+
+		right_motor_set_speed(PAS_VIT);
+		left_motor_set_speed(PAS_VIT);
+		chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+
+}*/
+
+void turn_around_clockwise_speed(void){
+	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+
+	//	right_motor_set_speed(PAS_VIT-600);
+	//	left_motor_set_speed(PAS_VIT+600);
+		right_motor_set_speed(400);
+		left_motor_set_speed(1000);
+//		chprintf((BaseSequentialStream *)&SD3, "soft right \r\n");
+		return;
 	}
+
+	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+40) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,10*CLOSE_THR)){
+			right_motor_set_speed(800);
+			left_motor_set_speed(-800);
+	//		chprintf((BaseSequentialStream *)&SD3, "2 \r\n");
+			return;
+		}
+		right_motor_set_speed(600);
+		left_motor_set_speed(600);
+	//	chprintf((BaseSequentialStream *)&SD3, "forward \r\n");
+		return;
+	}
+	else {
+		left_motor_set_speed(-800);
+		right_motor_set_speed(800);
+	//	chprintf((BaseSequentialStream *)&SD3, "hard left \r\n");
+	}
+
 
 }
 
+void search_obstacle (void)
+{
+	while (!colision_detected())
+	{
+		right_motor_set_speed(800);
+		left_motor_set_speed(800);
+	}
 
+	rotate_rad(M_PI/2+angle_colision(),600);
+	right_motor_set_speed(0);
+	left_motor_set_speed(0);
+}
 
 
 

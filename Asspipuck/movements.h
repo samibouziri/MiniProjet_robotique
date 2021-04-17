@@ -38,7 +38,7 @@ float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos)
  *
  * @return	the angle of rotation in rad
  */
-int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
+float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
 
 /**
  * @brief	converts a distance given in number of steps to a distance in cm
@@ -48,13 +48,24 @@ int32_t get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
  */
 float step_to_cm (int32_t nb_step);
 
+/**
+ * @brief	moves the robot forward with a certain speed*5.35
+ *
+ * @param 	distance (in cm) : distance to travel
+ * @param 	speed ((in step/s): speed of travel
+
+ */
+
+void move_forward(float distance, int16_t speed );
+
 float get_x(void);
 
 float get_y(void);
 
-int16_t get_angle(void);
+float get_angle(void);
 
 void robot_position_start(void);
+void go_to_xy (float abscisse, float ordonnee, int16_t speed);
 
 /**
  * @brief	for a given angle of incidence of a collision with a
@@ -66,5 +77,8 @@ void robot_position_start(void);
  */
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
 
+void turn_around_clockwise_speed(void);
+
+void search_obstacle (void);
 
 #endif /* MOVEMENTS_H_ */

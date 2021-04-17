@@ -24,6 +24,16 @@ typedef enum{
   SENSOR_8,
 }sensors_t;
 
+typedef enum{
+ BACK_LEFT,
+ LEFT,
+ FRONT_LEFT,
+ FRONT,
+ FRONT_RIGHT,
+ RIGHT,
+ BACK_RIGHT
+}region;
+
 /**
  * @brief	gives the angle of incidence when collinding with a surface
  *
@@ -56,9 +66,9 @@ float sensor_detection(sensors_t sensor);
  * @return	true if in proximity and false otherwise
  */
 
-bool sensor_close_obstacle (sensors_t sensor);
+bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold);
 
-
+region get_region(void);
 
 
 #endif /* IR_SENSOR_H_ */

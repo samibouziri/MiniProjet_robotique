@@ -22,7 +22,7 @@
 #define THETA5 		M_PI/2
 #define THETA6 		48.5*M_PI/180
 #define THETA7 		17.5*M_PI/180
-#define THRESHOLD 	600
+#define THRESHOLD 	200
 #define CLOSE_THR	100
 
 static const float COS_THETA []={cosf(THETA0) ,cosf(THETA1) ,cosf(THETA2) ,cosf(THETA3) ,cosf(THETA4) ,cosf(THETA5) ,cosf(THETA6) ,cosf(THETA7)};
@@ -93,11 +93,35 @@ return get_calibrated_prox(sensor);
  * @param 	sensor to check the proximity of
  * @return	true if in proximity and false otherwise
  */
-bool sensor_close_obstacle (sensors_t sensor)
+bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold)
 {
-	if (sensor_detection(sensor) <=CLOSE_THR)
+	if (get_calibrated_prox(sensor) >= threshold)
 		return true;
 	else return false;
+
+}
+
+region get_region(){
+	float angle =angle_colision();
+	if (angle>-M_PI && angle<=-100*M_PI/180)
+		return BACK_RIGHT;
+
+	if (angle>-100*M_PI/180 && angle<=-80*M_PI/180)
+		return RIGHT;
+
+	if (angle>-80*M_PI/180 && angle<=(THETA1+THETA0)/2)
+		return FRONT_RIGHT;
+
+	if (angle>(THETA1+THETA0)/2 && angle<=(THETA7+THETA6)/2)
+		return FRONT;
+
+	if (angle>(THETA7+THETA6)/2 && angle<=80*M_PI/180)
+		return FRONT_LEFT;
+
+	if (angle>80*M_PI/180 && angle<=100*M_PI/180)
+		return LEFT;
+
+	return BACK_LEFT;
 
 }
 

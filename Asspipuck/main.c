@@ -1,18 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "ch.h"
 #include "hal.h"
 #include "memory_protection.h"
+#include <usbcfg.h>
 #include <main.h>
+#include <math.h>
 #include <chprintf.h>
 
 #include <movements.h>
 #include <ir_sensor.h>
 #include <sensors/proximity.h>
 #include <motors.h>
+#include <audio/microphone.h>
+#include <audio_processing.h>
+#include <fft.h>
+#include <communications.h>
+#include <arm_math.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -30,12 +36,14 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
+
 int main(void)
 {
 
 	halInit();
 	chSysInit();
 	mpu_init();
+	chThdSleepMilliseconds(2000);
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	//starts the serial communication
 	serial_start();
@@ -44,41 +52,35 @@ int main(void)
 	motors_init();
 	proximity_start();
 	calibrate_ir();
+	//robot_position_start();
+	//temp tab used to store values in complex_float format
+	//needed bx doFFT_c
+	/*static complex_float temp_tab[FFT_SIZE];
+	//send_tab is used to save the state of the buffer to send (double buffering)
+	//to avoid modifications of the buffer while sending it
+	static float send_tab[FFT_SIZE];
+	mic_start(&processAudioData);
 
-<<<<<<< HEAD
-	/* Infinite loop. */
+
+	int16_t speed =500;
+	chThdSleepMilliseconds(4000);
+	// Infinite loop.
 	while (1) {
+		wait_send_to_computer();
+		arm_copy_f32(get_audio_buffer_ptr(LEFT_OUTPUT), send_tab, FFT_SIZE);
+		SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
 
-		move_forward(0.5, 500);
-		//waits 10 ms
-		chThdSleepMilliseconds(1000);
-=======
-	robot_position_start();
-
-	int16_t speed=500;
-	chThdSleepMilliseconds(10000);
-
-
-	/* Infinite loop. */
-	while (1) {
-
-		position_mode(10, 10, speed,  speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		rotate_rad(M_PI/2, speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		position_mode(10, 10, speed,  speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		position_mode(-10, -10, speed,  speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		rotate_rad(-M_PI/12, speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		rotate_rad(M_PI/12, speed);
-		chprintf((BaseSequentialStream *)&SD3, "x = %f y= %f angle=%d\n\r",get_x(),get_y(),get_angle());
-		//waits 3 sec
 		chThdSleepMilliseconds(4000);
->>>>>>> origin/main
+	}*/
+	search_obstacle();
+	while (1){
+		turn_around_clockwise_speed();
+		//chprintf((BaseSequentialStream *)&SD3, "prox(2)= %d prox(3)= %d \r\n",get_calibrated_prox(1),get_calibrated_prox(2));
+		chThdSleepMilliseconds(15);
 	}
+
 }
+
 
 #define STACK_CHK_GUARD 0xe2dee396
 uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
