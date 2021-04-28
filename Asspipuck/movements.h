@@ -119,6 +119,8 @@ void set_changing_mode(bool changing_value);
 
 mode_puck_t get_mode (void);
 
+bool get_calibrating(void);
+
 void move_forward_speed( int16_t speed );
 
 /**

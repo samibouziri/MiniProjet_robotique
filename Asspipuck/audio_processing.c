@@ -11,6 +11,7 @@
 #include <communications.h>
 #include <fft.h>
 #include <arm_math.h>
+#include <leds.h>
 
 //semaphore
 static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
@@ -64,7 +65,7 @@ void sound_remote(float* data){
 
 	static uint8_t timeout =0;
 
-	if (timeout >TIMEOUT_VALUE){
+	if (timeout > TIMEOUT_VALUE){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
 		}
@@ -105,27 +106,33 @@ void sound_remote(float* data){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
 		}
-		if (idx!=get_mode()){
+		if (idx!=get_mode() && !get_calibrating() ){
+			set_front_led(0);
+			set_led(get_mode(), 0);
 			switch (idx){
 			case 0:
 				set_stop(true);
 				set_changing_mode(true);
 				change_mode(HALT);
+				set_led(idx, 1);
 				break;
 			case 1:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(SOFT_CLEANING);
+				set_led(idx, 1);
 				break;
 			case 2:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(DEEP_CLEANING);
+				set_led(idx, 1);
 				break;
 			case 3:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(RETURN_HOME);
+				set_led(idx, 1);
 				break;
 			}
 		}

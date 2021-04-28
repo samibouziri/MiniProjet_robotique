@@ -9,6 +9,7 @@
 #include <main.h>
 #include <math.h>
 #include <chprintf.h>
+#include <spi_comm.h>
 
 #include <movements.h>
 #include <ir_sensor.h>
@@ -20,9 +21,23 @@
 #include <communications.h>
 #include <arm_math.h>
 
+#include <sensors/VL53L0X/VL53L0X.h>
+#include <sensors/VL53L0X/Api/core/inc/vl53l0x_api.h>
+#include <process_image.h>
+
+
+
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
+
+
+void SendUint8ToComputer(uint8_t* data, uint16_t size)
+{
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
+}
 
 static void serial_start(void)
 {
@@ -39,52 +54,31 @@ static void serial_start(void)
 
 int main(void)
 {
-
 	halInit();
 	chSysInit();
 	mpu_init();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	serial_start();
-
+	spi_comm_start();
+	usb_start();
 
 	chThdSleepMilliseconds(2000);
-	//inits the motors
+
 	motors_init();
 	proximity_start();
 	calibrate_ir();
+	mic_start(&processAudioData);
 	robot_position_start();
 	threads_start();
-	move_forward(100,1000);
-	//temp tab used to store values in complex_float format
-	//needed bx doFFT_c
-	/*static complex_float temp_tab[FFT_SIZE];
-	//send_tab is used to save the state of the buffer to send (double buffering)
-	//to avoid modifications of the buffer while sending it
-	static float send_tab[FFT_SIZE];
-	mic_start(&processAudioData);
+	VL53L0X_start();
+	dcmi_start();
+	po8030_start();
+	process_image_start();
 
-
-	int16_t speed =500;
-	chThdSleepMilliseconds(4000);
-	// Infinite loop.
-	while (1) {
-		wait_send_to_computer();
-		arm_copy_f32(get_audio_buffer_ptr(LEFT_OUTPUT), send_tab, FFT_SIZE);
-		SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
-
-		chThdSleepMilliseconds(4000);
-	}*/
-	//search_obstacle();
-	return_home();
-
-	//go_to_xy(0,0,600);
-	while (1){
-
-
-		//chprintf((BaseSequentialStream *)&SD3, "prox(2)= %d prox(3)= %d \r\n",get_calibrated_prox(1),get_calibrated_prox(2));
-		chThdSleepMilliseconds(1000);
+	while (1)
+	{
+		operating_mode();
 	}
-
 }
 
 

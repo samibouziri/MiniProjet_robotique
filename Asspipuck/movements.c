@@ -51,7 +51,7 @@
 #define WALL_DETECTED			800
 #define OBSTACLE_THR 				200
 #define THR_COEF				3
-#define THR_BIAS				40
+#define THR_BIAS				0
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
 #define PERIOD					2*M_PI
@@ -77,6 +77,7 @@ static bool stop=false;
 static bool arrived=false;
 static bool changing_mode=false;
 static mode_puck_t mode =HALT;
+static bool calibrating=false;
 
 static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
@@ -145,12 +146,6 @@ bool allign_to_avoid (void){
  * @param	yg:	ordinate of the goal locaztion (in cm)
  */
 void go_and_avoid(float xg, float yg){
-	if (arrived)
-	{
-		right_motor_set_speed(HALT_SPEED);
-		left_motor_set_speed(HALT_SPEED);
-		return;
-	}
 	do
 	{
 		if (changing_mode){
@@ -445,6 +440,40 @@ void turn_around_clockwise_speed(void){
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
+		right_motor_set_speed(400);
+		left_motor_set_speed(1000);
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+40) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+			right_motor_set_speed(800);
+			left_motor_set_speed(-800);
+			return;
+		}
+		right_motor_set_speed(600);
+		left_motor_set_speed(600);
+		return;
+	}
+	else {
+		left_motor_set_speed(-800);
+		right_motor_set_speed(800);
+	}
+}
+
+
+/*
+
+void turn_around_clockwise_speed(void){
+	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
 		right_motor_set_speed(TURN_INT_WHEEL_SPEED);
 		left_motor_set_speed(TURN_EXT_WHEEL_SPEED);
 		return;
@@ -458,6 +487,7 @@ void turn_around_clockwise_speed(void){
 		if (sensor_close_obstacle(SENSOR_3,THR_COEF*CLOSE_THR)){
 			right_motor_set_speed(SPEED);
 			left_motor_set_speed(-SPEED);
+			chThdSleepMilliseconds(125);
 			return;
 		}
 		right_motor_set_speed(SPEED);
@@ -467,8 +497,12 @@ void turn_around_clockwise_speed(void){
 	else {
 		left_motor_set_speed(-SPEED);
 		right_motor_set_speed(SPEED);
+		chThdSleepMilliseconds(125);
 	}
 }
+
+
+*/
 
 
 /**
@@ -634,6 +668,10 @@ mode_puck_t get_mode (void){
 	return mode;
 }
 
+bool get_calibrating(void){
+	return calibrating;
+}
+
 
 
 /**
@@ -653,12 +691,12 @@ void soft_cleaning(void)
 			chThdSleepMilliseconds(SOFT_CLEANING_SLEEP);
 			step=false;
 		}
-		while (mode==SOFT_CLEANING && !colision_detected(OBSTACLE_THR ))
+		while (mode==SOFT_CLEANING && !colision_detected(WALL_DETECTED ))
 		{
 			right_motor_set_speed(SPEED);
 			left_motor_set_speed(SPEED);
 		}
-		if (mode==SOFT_CLEANING && colision_detected(OBSTACLE_THR ))
+		if (mode==SOFT_CLEANING && colision_detected(WALL_DETECTED ))
 		{
 			rotate_rad(angle_reflection (angle_colision()),SPEED);
 			step=true;
@@ -708,6 +746,7 @@ void deep_cleaning(void)
 		{
 			turn_around_anticlockwise_speed();
 		}
+		chThdSleepMilliseconds(10);
 	}
 	right_motor_set_speed(HALT_SPEED);
 	left_motor_set_speed(HALT_SPEED);
@@ -769,43 +808,6 @@ void set_rbg_return_home(void)
 	set_rgb_led(LED8,GREEN);
 }
 
-
-
-/**
- * @brief	operate the e-puck in the mode corresponding to the state
- * 			of the variable mode
-*/
-void operating_mode(void)
-{
-	while(1) {
-
-		changing_mode=false;
-		stop=false;
-		switch (mode)
-		{
-		case HALT:
-			set_rgb_halt();
-			halt_mode();
-			clear_leds();
-			break;
-		case SOFT_CLEANING:
-			set_rgb_soft_cleaning();
-			soft_cleaning();
-			clear_leds();
-			break;
-		case DEEP_CLEANING:
-			set_rgb_deep_cleaning();
-			deep_cleaning();
-			clear_leds();
-			break;
-		case RETURN_HOME :
-			set_rbg_return_home();
-			go_and_avoid(HOME_POS);
-			clear_leds();
-			break;
-		}
-	}
-}
 
 /**
  * @brief	turn until it recognize 2 lines with the same width and
@@ -891,6 +893,49 @@ void calibration (void){
 }
 
 
+/**
+ * @brief	operate the e-puck in the mode corresponding to the state
+ * 			of the variable mode
+*/
+void operating_mode(void)
+{
+	while(1) {
+
+		changing_mode=false;
+		stop=false;
+		switch (mode)
+		{
+		case HALT:
+			set_rgb_halt();
+			halt_mode();
+			clear_leds();
+			break;
+		case SOFT_CLEANING:
+			set_rgb_soft_cleaning();
+			soft_cleaning();
+			clear_leds();
+			break;
+		case DEEP_CLEANING:
+			set_rgb_deep_cleaning();
+			deep_cleaning();
+			clear_leds();
+			break;
+		case RETURN_HOME :
+			set_rbg_return_home();
+			go_and_avoid(HOME_POS);
+			calibrating=true;
+			turn_patern_recognition();
+			calibration ();
+			calibrating=false;
+			while (mode==RETURN_HOME){
+				chThdSleepMilliseconds(5);
+			}
+			clear_leds();
+
+			break;
+		}
+	}
+}
 
 
 
