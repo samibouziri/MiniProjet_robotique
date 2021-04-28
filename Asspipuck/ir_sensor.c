@@ -41,7 +41,6 @@ static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-T
  *
  * @return	the angle of incidence of the collision (in rad)
  */
-
 float angle_colision (void){
 	float sum_cos=0;
 	float sum_sin=0;
@@ -64,7 +63,6 @@ float angle_colision (void){
  *
  * @return	true if there is a colision false if there is not
  */
-
 bool colision_detected (void){
 	for (uint8_t i =0 ; i<PROXIMITY_NB_CHANNELS ;i++){
 		if (get_calibrated_prox(i) >THRESHOLD){
@@ -92,6 +90,12 @@ bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold)
 
 }
 
+/**
+ * @brief	detects the region of collision depending on the angle
+ * 			of collision
+ * @param 	angle (in rad): angle of collision
+ * @return 	region of collision
+ */
 region get_region(float angle){
 	if (angle>-M_PI && angle<=THETA3)
 		return BACK;
@@ -121,6 +125,13 @@ region get_region(float angle){
 
 }
 
+
+/**
+ * @brief	indicates if the path is free or not based on the region
+ * 			that has the highest value of detection
+ * @param 	angle (in rad): angle of collision
+ * @return 	true if the path is free, false otherwise
+ */
 bool is_path_free(float angle){
 	switch (get_region(angle)){
 	case BACK:
