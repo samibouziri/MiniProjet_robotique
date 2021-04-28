@@ -55,7 +55,7 @@
 #define MAX_ANGLE				M_PI
 #define PERIOD					2*M_PI
 #define ROBOT_POSITION_SLEEP	10
-#define MAX_ANGLE_COLISION	M_PI/2
+#define MAX_ANGLE_COLISION		M_PI/2
 
 static float x=0;
 static float y=0;
