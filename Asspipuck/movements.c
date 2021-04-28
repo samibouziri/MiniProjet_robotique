@@ -49,6 +49,7 @@
 #define MAX_DETECTION_COUNT		10
 #define RECOGNITION_TURN_SPEED  200
 #define WALL_DETECTED			800
+#define OBSTACLE_THR 				200
 #define THR_COEF				3
 #define THR_BIAS				40
 #define NUM_PARTS				5
@@ -509,7 +510,7 @@ bool search_wall (void)
 */
 bool search_obstacle_turn (void)
 {
-	while (!colision_detected() && mode==DEEP_CLEANING )
+	while (!colision_detected(OBSTACLE_THR ) && mode==DEEP_CLEANING )
 	{
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
@@ -571,7 +572,7 @@ static THD_FUNCTION(ThdCollision, arg) {
 	{
 
 		chBSemWait(&detect_obstacle_sem);
-		while (!colision_detected() && mode==RETURN_HOME)
+		while (!colision_detected(OBSTACLE_THR ) && mode==RETURN_HOME)
 		{
 			chThdSleepMilliseconds(COLLISION_SLEEP);
 		}
@@ -652,12 +653,12 @@ void soft_cleaning(void)
 			chThdSleepMilliseconds(SOFT_CLEANING_SLEEP);
 			step=false;
 		}
-		while (mode==SOFT_CLEANING && !colision_detected())
+		while (mode==SOFT_CLEANING && !colision_detected(OBSTACLE_THR ))
 		{
 			right_motor_set_speed(SPEED);
 			left_motor_set_speed(SPEED);
 		}
-		if (mode==SOFT_CLEANING && colision_detected())
+		if (mode==SOFT_CLEANING && colision_detected(OBSTACLE_THR ))
 		{
 			rotate_rad(angle_reflection (angle_colision()),SPEED);
 			step=true;
