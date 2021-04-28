@@ -8,6 +8,14 @@
 #ifndef MOVEMENTS_H_
 #define MOVEMENTS_H_
 
+
+typedef enum{
+  HALT,
+  SOFT_CLEANING,
+  DEEP_CLEANING,
+  RETURN_HOME,
+}mode_puck_t;
+
 /**
  * @brief	rotates the e_puck with a certain angle and speed
  *
@@ -20,7 +28,7 @@ void rotate_rad(float angle, int16_t speed);
  * @brief	moves the robot forward with a certain speed
  *
  * @param 	distance (in cm) : distance to travel
- * @param 	speed ((in step/s): speed of travel
+ * @param 	speed (in step/s): speed of travel
 
  */
 
@@ -89,11 +97,26 @@ bool search_obstacle (void);
  * @brief	turns in circle around an obstacle clockwise
  *
  */
+void return_home(float xg, float yg);
 
 void turn_around_anticlockwise_speed(void);
 
 void turn_around_clockwise_speed(void);
 
 void threads_start(void);
+
+void change_mode (mode_puck_t new_mode);
+
+void test_mode(void); ////////// à supprimer
+
+void ricochet_mode(void);
+
+void operating_mode(void);
+
+void set_stop (bool stop_value);
+
+void set_changing_mode(bool changing_value);
+
+mode_puck_t get_mode (void);
 
 #endif /* MOVEMENTS_H_ */
