@@ -47,7 +47,7 @@ float angle_colision (void);
  * @return	true if there is a colision false if there is not
  */
 
-bool colision_detected (void);
+bool colision_detected (int threshold);
 
 
 /**

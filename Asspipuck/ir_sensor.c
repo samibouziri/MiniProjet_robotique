@@ -14,25 +14,54 @@
 #include <ir_sensor.h>
 
 //angle of positionning of the different sensors
-#define THETA0 		-17.5*M_PI/180
-#define THETA1 		-48.5*M_PI/180
-#define THETA2 		-M_PI/2
-#define THETA3 		-5*M_PI/6
-#define THETA4 		5*M_PI/6
-#define THETA5 		M_PI/2
-#define THETA6 		48.5*M_PI/180
-#define THETA7 		17.5*M_PI/180
+#define THETA0 		-15*M_PI/180
+#define THETA1 		-45*M_PI/180
+#define THETA2 		-M_PI/2.f
+#define THETA3 		-5*M_PI/6.f
+#define THETA4 		5*M_PI/6.f
+#define THETA5 		M_PI/2.f
+#define THETA6 		45*M_PI/180
+#define THETA7 		15*M_PI/180
 #define THRESHOLD 	200
 
 
-static const float COS_THETA []={cosf(THETA0) ,cosf(THETA1) ,cosf(THETA2) ,cosf(THETA3) ,cosf(THETA4) ,cosf(THETA5) ,cosf(THETA6) ,cosf(THETA7)};
-static const float SIN_THETA []={sinf(THETA0) ,sinf(THETA1) ,sinf(THETA2) ,sinf(THETA3) ,sinf(THETA4) ,sinf(THETA5) ,sinf(THETA6) ,sinf(THETA7)};
+//static const float COS_THETA []={cosf(THETA0) ,cosf(THETA1) ,cosf(THETA2) ,cosf(THETA3) ,cosf(THETA4) ,cosf(THETA5) ,cosf(THETA6) ,cosf(THETA7)};
+//static const float SIN_THETA []={sinf(THETA0) ,sinf(THETA1) ,sinf(THETA2) ,sinf(THETA3) ,sinf(THETA4) ,sinf(THETA5) ,sinf(THETA6) ,sinf(THETA7)};
 //wheights assigned for the different sensors
 static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA4-THETA5+M_PI/6 ,
 		THETA4-THETA5+M_PI/6 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA7+(THETA6-THETA7)/2};
 
 
-
+float get_theta(uint8_t idx){
+	float theta1=0;
+	switch (idx){
+	case 0:
+		theta1=THETA0;
+		break;
+	case 1:
+		theta1=THETA1;
+		break;
+	case 2:
+		theta1=THETA2;
+		break;
+	case 3:
+		theta1=THETA3;
+		break;
+	case 4:
+		theta1=THETA4;
+		break;
+	case 5:
+		theta1=THETA5;
+		break;
+	case 6:
+		theta1=THETA6;
+		break;
+	case 7:
+		theta1=THETA7;
+		break;
+	}
+	return theta1;
+}
 
 //////////Public functions//////////
 
@@ -42,7 +71,7 @@ static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-T
  * @return	the angle of incidence of the collision (in rad)
  */
 
-float angle_colision (void){
+/*float angle_colision (void){
 	float sum_cos=0;
 	float sum_sin=0;
 	for (uint8_t i=0;i<PROXIMITY_NB_CHANNELS;i++){
@@ -57,6 +86,16 @@ float angle_colision (void){
 	else{
 		return M_PI+2*theta;
 	}
+}*/
+
+float angle_colision (void){
+	float wheighted_sum =0;
+	float sum=0;
+	for (uint8_t i=0;i<PROXIMITY_NB_CHANNELS;i++){
+		wheighted_sum+=get_calibrated_prox(i)*get_theta(i)*WHEIGHT[i];
+		sum+=get_calibrated_prox(i)*WHEIGHT[i];
+	}
+	return wheighted_sum/sum;
 }
 
 /**
@@ -65,9 +104,9 @@ float angle_colision (void){
  * @return	true if there is a colision false if there is not
  */
 
-bool colision_detected (void){
+bool colision_detected (int threshold){
 	for (uint8_t i =0 ; i<PROXIMITY_NB_CHANNELS ;i++){
-		if (get_calibrated_prox(i) >THRESHOLD){
+		if (get_calibrated_prox(i) >threshold){
 			return true;
 		}
 	}
