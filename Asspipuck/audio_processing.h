@@ -3,7 +3,7 @@
 
 
 #define FFT_SIZE 	1024
-#define NB_STATES   5
+#define NB_STATES   4
 
 typedef enum {
 	//2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)

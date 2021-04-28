@@ -4,6 +4,7 @@
 #include <usbcfg.h>
 #include <chprintf.h>
 
+#include <movements.h>
 #include <motors.h>
 #include <audio/microphone.h>
 #include <audio_processing.h>
@@ -30,41 +31,45 @@ static uint8_t state [NB_STATES];
 
 #define MIN_VALUE_THRESHOLD	50000
 
-#define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
-#define FREQ_FORWARD	16	//250Hz
-#define FREQ_LEFT		19	//296Hz
-#define FREQ_RIGHT		23	//359HZ
-#define FREQ_BACKWARD	26	//406Hz
-#define STOP_FREQ		29
-#define MAX_FREQ		30	//we don't analyze after this index to not use resources for nothing
+#define MIN_FREQ				130	//we don't analyze before this index to not use resources for nothing
+#define FREQ_HALT				131	//2000Hz
+#define FREQ_SOFT_CLEANING		144	//2200Hz
+#define FREQ_DEEP_CLEANING		157	//2400Hz
+#define FREQ_HOME				170	//2600Hz
+#define MAX_FREQ				171	//we don't analyze after this index to not use resources for nothing
 
-#define FREQ_FORWARD_L		(FREQ_FORWARD-1)
-#define FREQ_FORWARD_H		(FREQ_FORWARD+1)
-#define FREQ_LEFT_L			(FREQ_LEFT-1)
-#define FREQ_LEFT_H			(FREQ_LEFT+1)
-#define FREQ_RIGHT_L		(FREQ_RIGHT-1)
-#define FREQ_RIGHT_H		(FREQ_RIGHT+1)
-#define FREQ_BACKWARD_L		(FREQ_BACKWARD-1)
-#define FREQ_BACKWARD_H		(FREQ_BACKWARD+1)
-#define STOP_FREQ_H			(STOP_FREQ+1)
-#define STOP_FREQ_L			(STOP_FREQ-1)
-/*
-*	Simple function used to detect the highest value in a buffer
-*	and to execute a motor command depending on it
-*/
+#define FREQ_HALT_L				(FREQ_HALT-1)
+#define FREQ_HALT_H				(FREQ_HALT+1)
+#define FREQ_SOFT_CLEANING_L	(FREQ_SOFT_CLEANING-1)
+#define FREQ_SOFT_CLEANING_H	(FREQ_SOFT_CLEANING+1)
+#define FREQ_DEEP_CLEANING_L	(FREQ_DEEP_CLEANING-1)
+#define FREQ_DEEP_CLEANING_H	(FREQ_DEEP_CLEANING+1)
+#define FREQ_HOME_L				(FREQ_HOME-1)
+#define FREQ_HOME_H				(FREQ_HOME+1)
+
+#define NO_INDEX		-1		//value given to the index when no index is chosen yet
+#define TIMEOUT_VALUE 	100		//timeout value
+
+
+/**
+ * @brief	change the mode of the robot depending on the frequency of the
+ * 			sound played.
+ *
+ * @param 	data: table containing the magnitude calculated using the
+ * 			FFT transform
+ */
 void sound_remote(float* data){
 	float max_norm = MIN_VALUE_THRESHOLD;
-	int16_t max_norm_index = -1; 
+	int16_t max_norm_index = NO_INDEX;
 
 	static uint8_t timeout =0;
 
-	if (timeout >100){
+	if (timeout >TIMEOUT_VALUE){
 		for (uint8_t i =0; i< NB_STATES; i++){
-					state[i]=0;
-				}
+			state[i]=0;
+		}
 	}
 
-	//search for the highest peak
 	for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
 		if(data[i] > max_norm){
 			max_norm = data[i];
@@ -72,24 +77,20 @@ void sound_remote(float* data){
 		}
 	}
 
-	//go forward
-	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		state[0]++;
+	if(max_norm_index >= FREQ_HALT_L && max_norm_index <= FREQ_HALT_H){
+		state[HALT]++;
 	}
-	//turn left
-	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		state[1]++;
+
+	else if(max_norm_index >= FREQ_SOFT_CLEANING_L && max_norm_index <= FREQ_SOFT_CLEANING_H){
+		state[SOFT_CLEANING]++;
 	}
-	//turn right
-	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		state[2]++;
+
+	else if(max_norm_index >= FREQ_DEEP_CLEANING_L && max_norm_index <= FREQ_DEEP_CLEANING_H){
+		state[DEEP_CLEANING]++;
 	}
-	//go backward
-	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		state[3]++;
-	}
-	else if(max_norm_index >= STOP_FREQ_L && max_norm_index <= STOP_FREQ_H){
-		state[4]++;
+
+	else if(max_norm_index >= FREQ_HOME_L && max_norm_index <= FREQ_HOME_H){
+		state[RETURN_HOME]++;
 	}
 
 	uint8_t max=state[0];
@@ -104,30 +105,32 @@ void sound_remote(float* data){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
 		}
-		switch (idx){
-		case 0:
-			left_motor_set_speed(600);
-			right_motor_set_speed(600);
-			break;
-		case 1:
-			left_motor_set_speed(-600);
-			right_motor_set_speed(600);
-			break;
-		case 2:
-			left_motor_set_speed(600);
-			right_motor_set_speed(-600);
-			break;
-		case 3:
-			left_motor_set_speed(-600);
-			right_motor_set_speed(-600);
-			break;
-		case 4:
-			left_motor_set_speed(0);
-			right_motor_set_speed(0);
-			break;
+		if (idx!=get_mode()){
+			switch (idx){
+			case 0:
+				set_stop(true);
+				set_changing_mode(true);
+				change_mode(HALT);
+				break;
+			case 1:
+				set_stop (true);
+				set_changing_mode(true);
+				change_mode(SOFT_CLEANING);
+				break;
+			case 2:
+				set_stop (true);
+				set_changing_mode(true);
+				change_mode(DEEP_CLEANING);
+				break;
+			case 3:
+				set_stop (true);
+				set_changing_mode(true);
+				change_mode(RETURN_HOME);
+				break;
+			}
 		}
 	}
-	
+
 }
 
 /*
@@ -141,31 +144,17 @@ void sound_remote(float* data){
 */
 void processAudioData(int16_t *data, uint16_t num_samples){
 
-	/*
-	*
-	*	We get 160 samples per mic every 10ms
-	*	So we fill the samples buffers to reach
-	*	1024 samples, then we compute the FFTs.
-	*
-	*/
-
 	static uint16_t nb_samples = 0;
-	static uint8_t mustSend = 0;
 
 	//loop to fill the buffers
 	for(uint16_t i = 0 ; i < num_samples ; i+=4){
 		//construct an array of complex numbers. Put 0 to the imaginary part
-		micRight_cmplx_input[nb_samples] = (float)data[i + MIC_RIGHT];
+
 		micLeft_cmplx_input[nb_samples] = (float)data[i + MIC_LEFT];
-		micBack_cmplx_input[nb_samples] = (float)data[i + MIC_BACK];
-		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
 
 		nb_samples++;
 
-		micRight_cmplx_input[nb_samples] = 0;
 		micLeft_cmplx_input[nb_samples] = 0;
-		micBack_cmplx_input[nb_samples] = 0;
-		micFront_cmplx_input[nb_samples] = 0;
 
 		nb_samples++;
 
@@ -182,10 +171,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		*	This is an "In Place" function. 
 		*/
 
-		doFFT_optimized(FFT_SIZE, micRight_cmplx_input);
 		doFFT_optimized(FFT_SIZE, micLeft_cmplx_input);
-		doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
-		doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
+
 
 		/*	Magnitude processing
 		*
@@ -194,29 +181,29 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		*	real numbers.
 		*
 		*/
-		arm_cmplx_mag_f32(micRight_cmplx_input, micRight_output, FFT_SIZE);
 		arm_cmplx_mag_f32(micLeft_cmplx_input, micLeft_output, FFT_SIZE);
-		arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
-		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
 
-		//sends only one FFT result over 10 for 1 mic to not flood the computer
-		//sends to UART3
-		if(mustSend > 8){
-			//signals to send the result to the computer
-			chBSemSignal(&sendToComputer_sem);
-			mustSend = 0;
-		}
 		nb_samples = 0;
-		mustSend++;
-
 		sound_remote(micLeft_output);
 	}
 }
 
+
+
+/*
+*	@brief 	wait for the sendToComputer_sem
+*/
 void wait_send_to_computer(void){
 	chBSemWait(&sendToComputer_sem);
 }
 
+
+/*
+*	@brief 	get the pointer of the corresponding buffer
+*
+*	@param	BUFFER_NAME_t: buffer name of the wanted pointer.
+*	return	pointer of the buffer
+*/
 float* get_audio_buffer_ptr(BUFFER_NAME_t name){
 	if(name == LEFT_CMPLX_INPUT){
 		return micLeft_cmplx_input;
