@@ -8,6 +8,14 @@
 #ifndef MOVEMENTS_H_
 #define MOVEMENTS_H_
 
+
+typedef enum{
+  HALT,
+  SOFT_CLEANING,
+  DEEP_CLEANING,
+  RETURN_HOME,
+}mode_puck_t;
+
 /**
  * @brief	rotates the e_puck with a certain angle and speed
  *
@@ -20,7 +28,7 @@ void rotate_rad(float angle, int16_t speed);
  * @brief	moves the robot forward with a certain speed
  *
  * @param 	distance (in cm) : distance to travel
- * @param 	speed ((in step/s): speed of travel
+ * @param 	speed (in step/s): speed of travel
 
  */
 
@@ -89,6 +97,7 @@ bool search_wall (void);
  * @brief	turns in circle around an obstacle clockwise
  *
  */
+void go_and_avoid(float xg, float yg);
 
 void turn_around_anticlockwise_speed(void);
 
@@ -96,21 +105,33 @@ void turn_around_clockwise_speed(void);
 
 void threads_start(void);
 
-void return_home(float xg , float yg);
+void change_mode (mode_puck_t new_mode);
+
+void test_mode(void); ////////// à supprimer
+
+void ricochet_mode(void);
+
+void operating_mode(void);
+
 void set_stop (bool stop_value);
+
+void set_changing_mode(bool changing_value);
+
+mode_puck_t get_mode (void);
+
 void move_forward_speed( int16_t speed );
 
 /**
- * @brief	turn until it recognize 2 lines with the same width and
- * 			seperated by the width of one of them
+ * @brief turn until it recognize 2 lines with the same width and
+ *      seperated by the width of one of them
  */
 void turn_patern_recognition(void);
 
 /**
- * @brief	makes the e-puck go forward until it reaches a wall and
- * 			then place itself in front of it by a distance of 15 cm
- * 			and in the middle of it (assuming that there are walls
- * 			on its right and left)
+ * @brief makes the e-puck go forward until it reaches a wall and
+ *      then place itself in front of it by a distance of 15 cm
+ *      and in the middle of it (assuming that there are walls
+ *      on its right and left)
  */
 void calibration (void);
 

@@ -56,15 +56,26 @@
 #define PERIOD					2*M_PI
 #define ROBOT_POSITION_SLEEP	10
 #define MAX_ANGLE_COLISION		M_PI/2
+#define MINIMAL_ANGLE_EXIT	M_PI/4
+#define MAXIMAL_ANGLE_EXIT	3*M_PI/4
+#define COLLISION_SLEEP		10		//sleeping time during the detection of a collision
+#define GO_AND_AVOID_SLEEP	15		//sleeping time for the rotation around the obstacle
+#define SOFT_CLEANING_SLEEP 100		//sleeping time in the soft cleaning mode to avoid detecting the same collision twice
+#define BLUE	0,0,255
+#define RED		255,0,0
+#define GREEN	0,255,0
+#define	WHITE	255,255,255
+#define ORANGE	255,165,0
+#define HOME_POS	0,0
 
 static float x=0;
 static float y=0;
 static float angle=0;
 
-static bool stop=0;
-static bool arrived=0;
-static bool changing_mode=0;
-
+static bool stop=false;
+static bool arrived=false;
+static bool changing_mode=false;
+static mode_puck_t mode =HALT;
 
 static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
@@ -105,7 +116,12 @@ static THD_FUNCTION(RobotPosition, arg) {
 
 	}
 }
-
+/**
+ * @brief	rotate the e-puck to the right or to the left depending on the angle
+ *			of collision to get it parallel with the obstacle
+ *
+ * @return	true if rotation done to the left, false if rotation done to the right
+ */
 bool allign_to_avoid (void){
 	if (angle_colision()<0)
 	{
@@ -119,31 +135,67 @@ bool allign_to_avoid (void){
 	}
 }
 
-void return_home(float xg, float yg){
+/**
+ * @brief	commands the e-puck to go to a certain location and stop there
+ * 			when the location is reached. The e-puck avoids all obstacles
+ * 			while going to the designed location.
+ *
+ * @param 	xg:	abscissa of the goal locaztion (in cm)
+ * @param	yg:	ordinate of the goal locaztion (in cm)
+ */
+void go_and_avoid(float xg, float yg){
+	if (arrived)
+	{
+		right_motor_set_speed(HALT_SPEED);
+		left_motor_set_speed(HALT_SPEED);
+		return;
+	}
 	do
 	{
+		if (changing_mode){
+			right_motor_set_speed(HALT_SPEED);
+			left_motor_set_speed(HALT_SPEED);
+			return;
+		}
 		chBSemSignal(&detect_obstacle_sem);
 		go_to_xy (xg,yg,SPEED);
-		if (!changing_mode){
-			stop=false;
+		if (changing_mode)
+		{
+			right_motor_set_speed(HALT_SPEED);
+			left_motor_set_speed(HALT_SPEED);
+			return;
 		}
+		stop=false;
 		if(!arrived && !stop){
 			float alpha=0;
 			if (allign_to_avoid ()){
 				do{
+					if (changing_mode){
+						right_motor_set_speed(HALT_SPEED);
+						left_motor_set_speed(HALT_SPEED);
+						return;
+					}
 					turn_around_clockwise_speed();
-					chThdSleepMilliseconds(15);
+					chThdSleepMilliseconds(GO_AND_AVOID_SLEEP);
 					alpha =atan2f((yg-y),(xg-x))-angle;
-					alpha=confine_angle (alpha);
-				}while (!(alpha>M_PI/4 && alpha< 3*M_PI/4) && !stop);
+					alpha=confine_angle(alpha);
+				}while (!(alpha>MINIMAL_ANGLE_EXIT && alpha< MAXIMAL_ANGLE_EXIT) && !stop);
 			}
 			else{
 				do{
+					if (changing_mode){
+						right_motor_set_speed(HALT_SPEED);
+						left_motor_set_speed(HALT_SPEED);
+						return;
+					}
 					turn_around_anticlockwise_speed();
-					chThdSleepMilliseconds(15);
+					chThdSleepMilliseconds(GO_AND_AVOID_SLEEP);
 					alpha =atan2f((yg-y),(xg-x))-angle;
-					alpha=confine_angle(alpha);
-				}while (!(alpha>-3*M_PI/4 && alpha< -M_PI/4) && !stop);
+					if (alpha>M_PI)
+						alpha -=2*M_PI;
+					if (alpha<=-M_PI)
+						alpha +=2*M_PI;
+				}while (!(alpha>-MAXIMAL_ANGLE_EXIT && alpha<-MINIMAL_ANGLE_EXIT) && !stop);
 			}
 			arrived=false;
 		}
@@ -203,7 +255,7 @@ float angle_reflection (float angle_colision){
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 {
 	if (!stop){
-		arrived =0;
+		arrived =false;
 		bool stop_r=false;
 		bool stop_l=false;
 
@@ -225,7 +277,6 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 		{
 			if (abs(right_motor_get_pos()-right_pos)>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
 			{
-				//chprintf((BaseSequentialStream *)&SD3, "step=%d\n\r",abs(right_motor_get_pos()-right_pos));
 				stop_r=true;
 				right_motor_set_speed(HALT_SPEED);
 			}
@@ -235,7 +286,10 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 				left_motor_set_speed(HALT_SPEED);
 			}
 			if (stop_r && stop_l) {
-				arrived =1;
+				if (mode==RETURN_HOME)
+				{
+					arrived =true;
+				}
 				break;
 			}
 		}
@@ -248,10 +302,10 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 
 
 /**
- * @brief	moves the robot forward with a certain speed*5.35
+ * @brief	moves the robot by a certain distance with a certain speed
  *
  * @param 	distance (in cm) : distance to travel
- * @param 	speed ((in step/s): speed of travel
+ * @param 	speed (in step/s): speed of travel
 
  */
 void move_forward(float distance,  int16_t speed )
@@ -259,19 +313,33 @@ void move_forward(float distance,  int16_t speed )
 	position_mode(distance, distance, speed, speed);
 }
 
+/**
+ * @brief	moves the robot forward with a certain speed
+ *
+ * @param 	speed (in step/s): speed of travel
+ */
 void move_forward_speed( int16_t speed )
 {
 	right_motor_set_speed(speed);
 	left_motor_set_speed(speed);
 }
 
+/**
+ * @brief	turn the robot to the right with a certain speed
+ *
+ * @param 	speed (in step/s): speed of travel
+ */
 void turn_right( int16_t speed )
 {
 	right_motor_set_speed(speed/2);
 	left_motor_set_speed(speed*2);
 }
 
-
+/**
+ * @brief	rotate the robot to the left with a certain speed
+ *
+ * @param 	speed (in step/s): speed of rotation
+ */
 void rotate_left ( int16_t speed )
 {
 	right_motor_set_speed(speed);
@@ -306,27 +374,55 @@ float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos){
  */
 float step_to_cm (int32_t nb_step){
 	return nb_step*WHEEL_PERIMETER*1./NSTEP_ONE_TURN;
-
 }
 
+/**
+ * @brief	returns the x coordinate of the robot
+ *
+ *
+ * @return	coordinate x in cm
+ */
 float get_x() {
 	return x;
 }
 
+/**
+ * @brief	returns the y coordinate of the robot
+ *
+ * @return	coordinate y in cm
+ */
 float get_y() {
 	return y;
 }
 
+/**
+ * @brief	returns the angle of rotation of the robot compared to
+ * 			the starting position
+ *
+ * @return	angle of rotation in degrees.
+ */
 float get_angle() {
 	return angle*180/M_PI;
 }
 
+/**
+ * @brief	sets the starting position of the robot and starts the thread responsible
+ * 			for constantly tracking the position of the robot.
+ */
 void robot_position_start(void){
 	left_motor_set_pos(HALT_SPEED);
 	right_motor_set_pos(HALT_SPEED);
 	chThdCreateStatic(waRobotPosition, sizeof(waRobotPosition), NORMALPRIO+1, RobotPosition, NULL);
 }
 
+/**
+ * @brief	go to the designed coordinates with a certain speed
+ * 			starting from the current position
+ *
+ * @param	abscisse (in cm) : abscissa of the goal position
+ * @param	ordonnee (in cm) : ordinate of the goal position
+ * @param	speed (in step/s): speed of travel
+ */
 void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 	for (uint8_t i=0; i<NUM_PARTS; i++){
 		float alpha =atan2f((ordonnee-y),(abscisse-x))-angle;
@@ -336,13 +432,12 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 	}
 
 }
+
+
 /**
- * @brief	turns in circle around an obstacle clockwise
- *			in position mode
+ * @brief	turns in circles clockwise around an obstacle
+ *
 */
-
-
-
 void turn_around_clockwise_speed(void){
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
@@ -372,11 +467,17 @@ void turn_around_clockwise_speed(void){
 		left_motor_set_speed(-SPEED);
 		right_motor_set_speed(SPEED);
 	}
-
-
 }
 
 bool search_wall (void)
+/**
+ * @brief	goes forward while no obstacle is detected, then align the robot
+ * 			if in front of an obstacle
+ *
+ * @return	true if the robot aligned itself to the left and false if the robot
+ * 			aligned itself to the right.
+*/
+bool search_obstacle (void)
 {
 	while (!colision_detected(WALL_DETECTED))
 	{
@@ -399,13 +500,37 @@ bool search_wall (void)
 }
 
 
+/**
+ * @brief	goes forward while no obstacle is detected while the robot is in
+ * 			deep cleaning mode, then align the robot if in front of an obstacle
+ *
+ * @return	true if the robot aligned itself to the left and false if the robot
+ * 			aligned itself to the right.
+*/
+bool search_obstacle_turn (void)
+{
+	while (!colision_detected() && mode==DEEP_CLEANING )
+	{
+		right_motor_set_speed(SPEED);
+		left_motor_set_speed(SPEED);
+	}
+	if (angle_colision()<0)
+	{
+		rotate_rad(M_PI/2+angle_colision(),SPEED);
+		return true;
+	}
+	else
+	{
+		rotate_rad(-M_PI/2+angle_colision(),SPEED);
+		return false;
+	}
+}
 
 
-
-
-
-
-
+/**
+ * @brief	turns in circles anticlockwise around an obstacle
+ *
+*/
 void turn_around_anticlockwise_speed(void){
 	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
@@ -435,32 +560,250 @@ void turn_around_anticlockwise_speed(void){
 		left_motor_set_speed(SPEED);
 		right_motor_set_speed(-SPEED);
 	}
-
-
 }
-static THD_WORKING_AREA(waThdPermission, 1024);
-static THD_FUNCTION(ThdPermission, arg) {
+static THD_WORKING_AREA(waThdCollision, 1024);
+static THD_FUNCTION(ThdCollision, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
 	(void)arg;
 
-	while (1)
+	while (true)
 	{
+
 		chBSemWait(&detect_obstacle_sem);
-		while (!colision_detected(200))
+		while (!colision_detected() && mode==RETURN_HOME)
 		{
-			chThdSleepMilliseconds(10);
+			chThdSleepMilliseconds(COLLISION_SLEEP);
 		}
-		stop=true;
+		if (mode==RETURN_HOME) {
+			stop=true;
+		}
 	}
 }
 
+/**
+ * @brief	sets the stop variable with the given value
+ *
+ * @param 	stop_value: value to set
+ *
+*/
 void set_stop (bool stop_value){
 	stop =stop_value;
 }
 
+
+/**
+ * @brief	sets the changing_mode variable with the given value
+ *
+ * @param 	changing_value: value to set
+ *
+*/
+void set_changing_mode(bool changing_value) {
+	changing_mode=changing_value;
+}
+
+
+/**
+ * @brief	starts the thread responsible for detecting obstacles
+ * 			while the robot is in go_home mode
+*/
 void threads_start(void){
-	chThdCreateStatic(waThdPermission, sizeof(waThdPermission), NORMALPRIO, ThdPermission, NULL);
+	chThdCreateStatic(waThdCollision, sizeof(waThdCollision), NORMALPRIO, ThdCollision, NULL);
+}
+
+
+/**
+ * @brief	change the mode of the e-puck to the given mode
+ *
+ * @param 	new_mode: new mode of the e_puck
+ *
+*/
+void change_mode (mode_puck_t new_mode){
+	mode=new_mode;
+}
+
+
+/**
+ * @brief	returns the current mode
+ *
+ * @return 	current mode
+ *
+*/
+mode_puck_t get_mode (void){
+	return mode;
+}
+
+
+
+/**
+ * @brief	main function used to operate the e-puck in soft cleaning mode.
+ * 			In this mode the e-puck will ricochet on obstacles with an angle of
+ * 			reflection equal to the angle of collision.
+*/
+void soft_cleaning(void)
+{
+	bool step=false;
+	while (mode==SOFT_CLEANING)
+	{
+		while (step && mode==SOFT_CLEANING)
+		{
+			right_motor_set_speed(SPEED);
+			left_motor_set_speed(SPEED);
+			chThdSleepMilliseconds(SOFT_CLEANING_SLEEP);
+			step=false;
+		}
+		while (mode==SOFT_CLEANING && !colision_detected())
+		{
+			right_motor_set_speed(SPEED);
+			left_motor_set_speed(SPEED);
+		}
+		if (mode==SOFT_CLEANING && colision_detected())
+		{
+			rotate_rad(angle_reflection (angle_colision()),SPEED);
+			step=true;
+		}
+		if (mode!=SOFT_CLEANING)
+		{
+			right_motor_set_speed(HALT_SPEED);
+			left_motor_set_speed(HALT_SPEED);
+			return;
+		}
+	}
+	right_motor_set_speed(HALT_SPEED);
+	left_motor_set_speed(HALT_SPEED);
+	return;
+}
+
+
+/**
+ * @brief	operates the e-puck in halt mode: sets the motor's speed
+ * 			to zero while in this mode
+*/
+void halt_mode(void)
+{
+	while (mode==HALT){
+		right_motor_set_speed(HALT_SPEED);
+		left_motor_set_speed(HALT_SPEED);
+	}
+}
+
+
+/**
+ * @brief	operates the e-puck in deeo cleaning mode: in this mode, the
+ * 			e-puck goes forward while no obstacle is detected then starts
+ * 			circling around the first detected obstacle in a clockwise
+ * 			or anticlockwise direction depending on the angle of collision
+*/
+void deep_cleaning(void)
+{
+	bool turn_clockwise=search_obstacle_turn();
+	while (mode==DEEP_CLEANING)
+	{
+		if (turn_clockwise && mode==DEEP_CLEANING)
+		{
+			turn_around_clockwise_speed();
+		}
+		else if (!turn_clockwise && mode==DEEP_CLEANING)
+		{
+			turn_around_anticlockwise_speed();
+		}
+	}
+	right_motor_set_speed(HALT_SPEED);
+	left_motor_set_speed(HALT_SPEED);
+	return;
+}
+
+
+/**
+ * @brief	sets the rgb leds with the color corresponding
+ * 			to the halt mode
+*/
+void set_rgb_halt(void)
+{
+	set_rgb_led(LED2,RED);
+	set_rgb_led(LED4,RED);
+	set_rgb_led(LED6,RED);
+	set_rgb_led(LED8,RED);
+}
+
+
+
+/**
+ * @brief	sets the rgb leds with the color corresponding
+ * 			to the ricochet mode
+*/
+void set_rgb_soft_cleaning(void)
+{
+	set_rgb_led(LED2,BLUE);
+	set_rgb_led(LED4,BLUE);
+	set_rgb_led(LED6,BLUE);
+	set_rgb_led(LED8,BLUE);
+}
+
+
+
+/**
+ * @brief	sets the rgb leds with the color corresponding
+ * 			to the turn_around mode
+*/
+void set_rgb_deep_cleaning(void)
+{
+	set_rgb_led(LED2,WHITE);
+	set_rgb_led(LED4,WHITE);
+	set_rgb_led(LED6,WHITE);
+	set_rgb_led(LED8,WHITE);
+}
+
+
+
+/**
+ * @brief	sets the rgb leds with the color corresponding
+ * 			to the go_home mode
+*/
+void set_rbg_return_home(void)
+{
+	set_rgb_led(LED2,GREEN);
+	set_rgb_led(LED4,GREEN);
+	set_rgb_led(LED6,GREEN);
+	set_rgb_led(LED8,GREEN);
+}
+
+
+
+/**
+ * @brief	operate the e-puck in the mode corresponding to the state
+ * 			of the variable mode
+*/
+void operating_mode(void)
+{
+	while(1) {
+
+		changing_mode=false;
+		stop=false;
+		switch (mode)
+		{
+		case HALT:
+			set_rgb_halt();
+			halt_mode();
+			clear_leds();
+			break;
+		case SOFT_CLEANING:
+			set_rgb_soft_cleaning();
+			soft_cleaning();
+			clear_leds();
+			break;
+		case DEEP_CLEANING:
+			set_rgb_deep_cleaning();
+			deep_cleaning();
+			clear_leds();
+			break;
+		case RETURN_HOME :
+			set_rbg_return_home();
+			go_and_avoid(HOME_POS);
+			clear_leds();
+			break;
+		}
+	}
 }
 
 /**
@@ -545,6 +888,11 @@ void calibration (void){
 	left_motor_set_pos(HALT_SPEED);
 	right_motor_set_pos(HALT_SPEED);
 }
+
+
+
+
+
 
 
 
