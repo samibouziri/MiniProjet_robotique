@@ -469,7 +469,7 @@ void turn_around_clockwise_speed(void){
 	}
 }
 
-bool search_wall (void)
+
 /**
  * @brief	goes forward while no obstacle is detected, then align the robot
  * 			if in front of an obstacle
@@ -477,7 +477,7 @@ bool search_wall (void)
  * @return	true if the robot aligned itself to the left and false if the robot
  * 			aligned itself to the right.
 */
-bool search_obstacle (void)
+bool search_wall (void)
 {
 	while (!colision_detected(WALL_DETECTED))
 	{

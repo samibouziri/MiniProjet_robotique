@@ -131,6 +131,12 @@ bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold)
 
 }
 
+/**
+ * @brief	detects the region of collision depending on the angle
+ * 			of collision
+ * @param 	angle (in rad): angle of collision
+ * @return 	region of collision
+ */
 region get_region(float angle){
 	if (angle>-M_PI && angle<=THETA3)
 		return BACK;
@@ -160,6 +166,13 @@ region get_region(float angle){
 
 }
 
+
+/**
+ * @brief	indicates if the path is free or not based on the region
+ * 			that has the highest value of detection
+ * @param 	angle (in rad): angle of collision
+ * @return 	true if the path is free, false otherwise
+ */
 bool is_path_free(float angle){
 	switch (get_region(angle)){
 	case BACK:
