@@ -82,7 +82,7 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
 
 void turn_around_clockwise_speed(void);
 
-bool search_obstacle (void);
+bool search_wall (void);
 
 
 /**
@@ -95,5 +95,23 @@ void turn_around_anticlockwise_speed(void);
 void turn_around_clockwise_speed(void);
 
 void threads_start(void);
+
+void return_home(float xg , float yg);
+void set_stop (bool stop_value);
+void move_forward_speed( int16_t speed );
+
+/**
+ * @brief	turn until it recognize 2 lines with the same width and
+ * 			seperated by the width of one of them
+ */
+void turn_patern_recognition(void);
+
+/**
+ * @brief	makes the e-puck go forward until it reaches a wall and
+ * 			then place itself in front of it by a distance of 15 cm
+ * 			and in the middle of it (assuming that there are walls
+ * 			on its right and left)
+ */
+void calibration (void);
 
 #endif /* MOVEMENTS_H_ */
