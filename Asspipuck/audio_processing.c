@@ -54,7 +54,7 @@ static uint8_t state [NB_STATES];
 #define NO_INDEX		-1		//value given to the index when no index is chosen yet
 #define TIMEOUT_VALUE 	100		//timeout value
 #define MAX_COUNT		5		// number of times the frequency has to be detected before changing the mode
-
+#define NB_MIC			4		//number of microphones
 
 /**
  * @brief	change the mode of the robot depending on the frequency of the
@@ -68,13 +68,14 @@ void sound_remote(float* data){
 	int16_t max_norm_index = NO_INDEX;
 
 	static uint8_t timeout =0;
-
+	// empty the state array after a certain timeout value
 	if (timeout > TIMEOUT_VALUE){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
 		}
 	}
 
+	// frequency recognition
 	for(uint16_t i = MIN_FREQ ; i <= MAX_FREQ ; i++){
 		if(data[i] > max_norm){
 			max_norm = data[i];
@@ -82,6 +83,7 @@ void sound_remote(float* data){
 		}
 	}
 
+	// state vector update
 	if(max_norm_index >= FREQ_HALT_L && max_norm_index <= FREQ_HALT_H){
 		state[HALT]++;
 	}
@@ -101,6 +103,7 @@ void sound_remote(float* data){
 		state[CHARGING]++;
 	}
 
+	// mode selection
 	uint8_t max=state[0];
 	uint8_t idx=0;
 	for (uint8_t i =1; i< NB_STATES; i++){
@@ -109,6 +112,8 @@ void sound_remote(float* data){
 			idx=i;
 		}
 	}
+
+	// apply the current mode
 	if (max> MAX_COUNT){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
@@ -149,6 +154,7 @@ void sound_remote(float* data){
 /*
 *	Callback called when the demodulation of the four microphones is done.
 *	We get 160 samples per mic every 10ms (16kHz)
+*	only the left microphone is used in this function
 *	
 *	params :
 *	int16_t *data			Buffer containing 4 times 160 samples. the samples are sorted by micro
@@ -160,7 +166,7 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	static uint16_t nb_samples = 0;
 
 	//loop to fill the buffers
-	for(uint16_t i = 0 ; i < num_samples ; i+=4){
+	for(uint16_t i = 0 ; i < num_samples ; i+=NB_MIC){
 		//construct an array of complex numbers. Put 0 to the imaginary part
 
 		micLeft_cmplx_input[nb_samples] = (float)data[i + MIC_LEFT];
