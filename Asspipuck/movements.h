@@ -139,4 +139,6 @@ void turn_patern_recognition(void);
 void calibration (void);
 void deep_cleaning(void);
 
+void deep_cleaning(void);
+
 #endif /* MOVEMENTS_H_ */

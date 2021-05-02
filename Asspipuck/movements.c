@@ -37,7 +37,7 @@
 #define HALT_SPEED				0
 #define QUARTER_TURN 			M_PI/2
 #define STEP_ROTATION 			M_PI/24
-#define DEG_TO_RAD(deg)			deg*M_PI/180
+#define DEG_TO_RAD(deg)			(deg*M_PI)/180
 #define MM_TO_CM(dist)			dist*0.1
 #define APPROACH_ANGLE			73
 #define PARALEL_TO_WALL_ANGLE	79
@@ -93,7 +93,7 @@ float confine_angle (float alpha){
 	return alpha;
 }
 
-static THD_WORKING_AREA(waRobotPosition, 256);
+static THD_WORKING_AREA(waRobotPosition, 1024);
 static THD_FUNCTION(RobotPosition, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
@@ -299,7 +299,6 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 
 
 
-
 /**
  * @brief	moves the robot by a certain distance with a certain speed
  *
@@ -431,7 +430,6 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 	}
 
 }
-
 
 /**
  * @brief	turns in circles clockwise around an obstacle
