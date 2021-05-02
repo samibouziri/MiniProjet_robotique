@@ -8,9 +8,10 @@
 #include <leds.h>
 #include <process_image.h>
 
-bool line_detection(const uint8_t* image, uint16_t* width, uint32_t somme);
-static float distance_cm = 0;
-static uint16_t center=0;
+bool line_detection(const uint8_t* image, uint32_t somme);
+
+static thread_t *captImThd;
+static thread_t *proImThd;
 
 #define d_lens 0.21168f
 #define pixel_size 2.8e-4f
@@ -35,7 +36,7 @@ static THD_FUNCTION(CaptureImage, arg) {
 	//systime_t time;
 
 
-	while(1){
+	while(chThdShouldTerminateX() == false){
 	        //starts a capture
 			dcmi_capture_start();
 			//waits for the capture to be done
@@ -56,10 +57,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
-	uint8_t send=0;
-	uint16_t width=0;
+	//uint8_t send=0;
 
-	while(1){
+	while(chThdShouldTerminateX() == false){
 		//waits until an image has been captured
 		chBSemWait(&image_ready_sem);
 		//gets the pointer to the array filled with the last image in RGB565    
@@ -73,27 +73,15 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 		somme/=IMAGE_BUFFER_SIZE;
 
-		if (send){
+		/*if (send){
 			SendUint8ToComputer(image,IMAGE_BUFFER_SIZE);
 		}
-		send= (send+1)&1;
+		send= (send+1)&1;*/
 
 		// detect black line
-		detected =line_detection(image,&width,somme);
-
-		distance_cm=(line_width*d_lens)/(pixel_size*width);
+		detected =line_detection(image,somme);
 	}
 
-
-}
-
-
-float get_distance_cm(void){
-	return distance_cm;
-}
-
-uint16_t get_center_line(void){
-	return center;
 }
 
 bool get_detected(void){
@@ -103,11 +91,20 @@ bool get_detected(void){
 
 
 void process_image_start(void){
-	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
-	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+	proImThd=chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+	captImThd=chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
 }
 
-bool line_detection(const uint8_t* image, uint16_t* width, uint32_t somme)
+void process_image_stop(void) {
+    chThdTerminate(proImThd);
+    chThdWait(proImThd);
+    proImThd = NULL;
+    chThdTerminate(captImThd);
+    chThdWait(captImThd);
+    captImThd = NULL;
+}
+
+bool line_detection(const uint8_t* image,uint32_t somme)
 {
 
 	bool  downthr=false;
@@ -169,9 +166,9 @@ bool line_detection(const uint8_t* image, uint16_t* width, uint32_t somme)
 			}
 		}
 		if ( 	widthline1>5 &&
-				((float)widthline1<=(float)widthline*1.6 && (float)widthline1>=(float)widthline/1.6) &&
-				(float)((abs(centerline-centerline1)-widthline1/2-widthline/2)<=(float)widthline*1.6 &&
-						(float)( abs(centerline-centerline1)-widthline1/2-widthline/2)>=(float)widthline/1.6)){
+				(widthline1<=widthline*2 && widthline1>=widthline/2) &&
+				((abs(centerline-centerline1)-widthline1/2-widthline/2)<=widthline*2 &&
+						( abs(centerline-centerline1)-widthline1/2-widthline/2)>=widthline/2)){
 			return true ;
 		}else {
 			return false;
@@ -180,9 +177,6 @@ bool line_detection(const uint8_t* image, uint16_t* width, uint32_t somme)
 	else{
 		return false;
 	}
-
-	*width=widthline;
-	center=centerline;
 }
 
 
