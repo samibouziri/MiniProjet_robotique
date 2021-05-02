@@ -32,7 +32,7 @@
 #define TIME_OF_MEAS			400
 #define DIST_IN_FRONT_OF_WALL	15
 #define SPEED					700
-#define TURN_INT_WHEEL_SPEED	400
+#define TURN_INT_WHEEL_SPEED	350
 #define TURN_EXT_WHEEL_SPEED	1000
 #define HALT_SPEED				0
 #define QUARTER_TURN 			M_PI/2
@@ -57,22 +57,21 @@
 #define PERIOD					2*M_PI
 #define ROBOT_POSITION_SLEEP	10
 #define MAX_ANGLE_COLISION		M_PI/2
-#define MINIMAL_ANGLE_EXIT	M_PI/4
-#define MAXIMAL_ANGLE_EXIT	3*M_PI/4
-#define COLLISION_SLEEP		10		//sleeping time during the detection of a collision
-#define GO_AND_AVOID_SLEEP	15		//sleeping time for the rotation around the obstacle
-#define SOFT_CLEANING_SLEEP 100		//sleeping time in the soft cleaning mode to avoid detecting the same collision twice
-#define BLUE	0,0,255
-#define RED		255,0,0
-#define GREEN	0,255,0
-#define	WHITE	255,255,255
-#define ORANGE	255,165,0
-#define HOME_POS	0,0
+#define MINIMAL_ANGLE_EXIT		M_PI/4
+#define MAXIMAL_ANGLE_EXIT		3*M_PI/4
+#define COLLISION_SLEEP			10		//sleeping time during the detection of a collision
+#define GO_AND_AVOID_SLEEP		15		//sleeping time for the rotation around the obstacle
+#define SOFT_CLEANING_SLEEP		100		//sleeping time in the soft cleaning mode to avoid detecting the same collision twice
+#define BLUE					0,0,255
+#define RED						255,0,0
+#define GREEN					0,255,0
+#define	WHITE					255,255,255
+#define ORANGE					255,165,0
+#define HOME_POS				0,0
 
 static float x=0;
 static float y=0;
 static float angle=0;
-
 static bool stop=false;
 static bool arrived=false;
 static bool changing_mode=false;
@@ -85,6 +84,13 @@ static BSEMAPHORE_DECL(detect_obstacle_sem, TRUE);
 
 //////////Private functions//////////
 
+
+/**
+ * @brief	confine the angle in the range of [-pi,pi]
+ *
+ * @param 	angle (in rad):	angle that is out of range of [-pi,pi]
+ * @return	angle in the main angles' range
+ */
 float confine_angle (float alpha){
 	if (alpha>MAX_ANGLE)
 		alpha -=PERIOD;
@@ -93,6 +99,13 @@ float confine_angle (float alpha){
 	return alpha;
 }
 
+
+
+/*
+ * Thread: this thread is responsible for tracking the position of the robot
+ * while he is moving. It runs constantly in the background from the moment the
+ * robot is turned on.
+ */
 static THD_WORKING_AREA(waRobotPosition, 1024);
 static THD_FUNCTION(RobotPosition, arg) {
 
@@ -189,10 +202,7 @@ void go_and_avoid(float xg, float yg){
 					turn_around_anticlockwise_speed();
 					chThdSleepMilliseconds(GO_AND_AVOID_SLEEP);
 					alpha =atan2f((yg-y),(xg-x))-angle;
-					if (alpha>M_PI)
-						alpha -=2*M_PI;
-					if (alpha<=-M_PI)
-						alpha +=2*M_PI;
+					alpha=confine_angle(alpha);
 				}while (!(alpha>-MAXIMAL_ANGLE_EXIT && alpha<-MINIMAL_ANGLE_EXIT) && !stop);
 			}
 			arrived=false;
@@ -204,7 +214,6 @@ void go_and_avoid(float xg, float yg){
 }
 
 //////////Public functions/////////
-
 
 /**
  * @brief rotates the e_puck with a certain angle and speed
@@ -438,15 +447,6 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 
 
 void turn_around_clockwise_speed(void){
-	chprintf((BaseSequentialStream *)&SD3, "prox[0] = %d prox[1] = %d prox[2] = %d prox[3] = %d prox[4] = %d prox[5] = %d prox[6] = %d prox[7] = %d \n\r",
-			get_calibrated_prox(0),
-			get_calibrated_prox(1),
-			get_calibrated_prox(2),
-			get_calibrated_prox(3),
-			get_calibrated_prox(4),
-			get_calibrated_prox(5),
-			get_calibrated_prox(6),
-			get_calibrated_prox(7));
 	uint16_t s2_thd=CLOSE_THR;
 	if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
 		s2_thd=CLOSE_THR;
@@ -457,8 +457,8 @@ void turn_around_clockwise_speed(void){
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
-		right_motor_set_speed(350);
-		left_motor_set_speed(1000);
+		right_motor_set_speed(TURN_INT_WHEEL_SPEED);
+		left_motor_set_speed(TURN_EXT_WHEEL_SPEED);
 		chprintf((BaseSequentialStream *)&SD3, "1\n\r");
 		return;
 	}
