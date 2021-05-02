@@ -35,8 +35,8 @@ bool line_detection(const uint8_t* image,uint32_t mean);
 static THD_WORKING_AREA(waCaptureImage, 256);
 static THD_FUNCTION(CaptureImage, arg) {
 
-    chRegSetThreadName(__FUNCTION__);
-    (void)arg;
+	chRegSetThreadName(__FUNCTION__);
+	(void)arg;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
 	po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
@@ -45,12 +45,12 @@ static THD_FUNCTION(CaptureImage, arg) {
 	dcmi_prepare();
 
 	while(chThdShouldTerminateX() == false){
-	        //starts a capture
-			dcmi_capture_start();
-			//waits for the capture to be done
-			wait_image_ready();
-			//signals an image has been captured
-			chBSemSignal(&image_ready_sem);
+		//starts a capture
+		dcmi_capture_start();
+		//waits for the capture to be done
+		wait_image_ready();
+		//signals an image has been captured
+		chBSemSignal(&image_ready_sem);
 	}
 }
 
@@ -58,8 +58,8 @@ static THD_FUNCTION(CaptureImage, arg) {
 static THD_WORKING_AREA(waProcessImage, 1024);
 static THD_FUNCTION(ProcessImage, arg) {
 
-    chRegSetThreadName(__FUNCTION__);
-    (void)arg;
+	chRegSetThreadName(__FUNCTION__);
+	(void)arg;
 
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
@@ -220,10 +220,10 @@ void process_image_start(void){
  * 			image and the thread responsible processing of the image
  */
 void process_image_stop(void) {
-    chThdTerminate(proImThd);
-    chThdWait(proImThd);
-    proImThd = NULL;
-    chThdTerminate(captImThd);
-    chThdWait(captImThd);
-    captImThd = NULL;
+	chThdTerminate(proImThd);
+	chThdWait(proImThd);
+	proImThd = NULL;
+	chThdTerminate(captImThd);
+	chThdWait(captImThd);
+	captImThd = NULL;
 }
