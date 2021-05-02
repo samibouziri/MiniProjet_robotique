@@ -49,7 +49,7 @@
 #define MAX_DETECTION_COUNT		10
 #define RECOGNITION_TURN_SPEED  200
 #define WALL_DETECTED			800
-#define OBSTACLE_THR 			200
+#define OBSTACLE_THR 			700
 #define THR_COEF				3
 #define THR_BIAS				40
 #define NUM_PARTS				5
@@ -434,90 +434,90 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 /**
  * @brief	turns in circles clockwise around an obstacle
  *
-*/
+ */
 
 
 void turn_around_clockwise_speed(void){
 	chprintf((BaseSequentialStream *)&SD3, "prox[0] = %d prox[1] = %d prox[2] = %d prox[3] = %d prox[4] = %d prox[5] = %d prox[6] = %d prox[7] = %d \n\r",
-			    	get_calibrated_prox(0),
-					get_calibrated_prox(1),
-					get_calibrated_prox(2),
-					get_calibrated_prox(3),
-					get_calibrated_prox(4),
-					get_calibrated_prox(5),
-					get_calibrated_prox(6),
-					get_calibrated_prox(7));
+			get_calibrated_prox(0),
+			get_calibrated_prox(1),
+			get_calibrated_prox(2),
+			get_calibrated_prox(3),
+			get_calibrated_prox(4),
+			get_calibrated_prox(5),
+			get_calibrated_prox(6),
+			get_calibrated_prox(7));
 	uint16_t s2_thd=CLOSE_THR;
 	if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
 		s2_thd=CLOSE_THR;
 	}
 	chprintf((BaseSequentialStream *)&SD3, "thr= %d \n\r",s2_thd);
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-				!sensor_close_obstacle(SENSOR_2,s2_thd) &&
-				!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-				!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-		{
-			right_motor_set_speed(350);
-			left_motor_set_speed(1000);
-			chprintf((BaseSequentialStream *)&SD3, "1\n\r");
+			!sensor_close_obstacle(SENSOR_2,s2_thd) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+		right_motor_set_speed(350);
+		left_motor_set_speed(1000);
+		chprintf((BaseSequentialStream *)&SD3, "1\n\r");
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*4/5) &&
+			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+	{
+		if (sensor_close_obstacle(SENSOR_3,1200)){
+			right_motor_set_speed(600);
+			left_motor_set_speed(-600);
+			chprintf((BaseSequentialStream *)&SD3, "2\n\r");
 			return;
 		}
-
-		else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-				!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*4/5) &&
-				!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-				!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-		{
-			if (sensor_close_obstacle(SENSOR_3,1200)){
-				right_motor_set_speed(600);
-				left_motor_set_speed(-600);
-				chprintf((BaseSequentialStream *)&SD3, "2\n\r");
-				return;
-			}
-			if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
-				right_motor_set_speed(800);
-				left_motor_set_speed(0);
-				chprintf((BaseSequentialStream *)&SD3, "3\n\r");
-				return;
-			}
-			right_motor_set_speed(700);
-			left_motor_set_speed(700);
-			chprintf((BaseSequentialStream *)&SD3, "4\n\r");
+		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+			right_motor_set_speed(800);
+			left_motor_set_speed(0);
+			chprintf((BaseSequentialStream *)&SD3, "3\n\r");
 			return;
 		}
-		else {
-			if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+600)||
-					sensor_close_obstacle(SENSOR_8,CLOSE_THR+600)||
-					sensor_close_obstacle(SENSOR_7,CLOSE_THR+600)){
-				right_motor_set_speed(600);
-				left_motor_set_speed(-600);
-			}
-			else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+100)||
-					sensor_close_obstacle(SENSOR_8,CLOSE_THR+100)||
-					sensor_close_obstacle(SENSOR_7,CLOSE_THR+100)){
-				right_motor_set_speed(600);
-				left_motor_set_speed(-300);
-			}
-			else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR-200)||
-					sensor_close_obstacle(SENSOR_8,CLOSE_THR-200)||
-					sensor_close_obstacle(SENSOR_7,CLOSE_THR-200)){
-				right_motor_set_speed(800);
-				left_motor_set_speed(-120);
-				chprintf((BaseSequentialStream *)&SD3, "5\n\r");
-			}
-			else if (sensor_close_obstacle(SENSOR_2,1200)){
-				right_motor_set_speed(600);
-				left_motor_set_speed(-600);
-				chprintf((BaseSequentialStream *)&SD3, "6\n\r");
-				return;
-			}else{
-				left_motor_set_speed(-120);
-				right_motor_set_speed(800);
-				chprintf((BaseSequentialStream *)&SD3, "7\n\r");
-				s2_thd=40;
-			}
-
+		right_motor_set_speed(700);
+		left_motor_set_speed(700);
+		chprintf((BaseSequentialStream *)&SD3, "4\n\r");
+		return;
+	}
+	else {
+		if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+600)||
+				sensor_close_obstacle(SENSOR_8,CLOSE_THR+600)||
+				sensor_close_obstacle(SENSOR_7,CLOSE_THR+600)){
+			right_motor_set_speed(600);
+			left_motor_set_speed(-600);
 		}
+		else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+100)||
+				sensor_close_obstacle(SENSOR_8,CLOSE_THR+100)||
+				sensor_close_obstacle(SENSOR_7,CLOSE_THR+100)){
+			right_motor_set_speed(600);
+			left_motor_set_speed(-300);
+		}
+		else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR-200)||
+				sensor_close_obstacle(SENSOR_8,CLOSE_THR-200)||
+				sensor_close_obstacle(SENSOR_7,CLOSE_THR-200)){
+			right_motor_set_speed(800);
+			left_motor_set_speed(-120);
+			chprintf((BaseSequentialStream *)&SD3, "5\n\r");
+		}
+		else if (sensor_close_obstacle(SENSOR_2,1200)){
+			right_motor_set_speed(600);
+			left_motor_set_speed(-600);
+			chprintf((BaseSequentialStream *)&SD3, "6\n\r");
+			return;
+		}else{
+			left_motor_set_speed(-120);
+			right_motor_set_speed(800);
+			chprintf((BaseSequentialStream *)&SD3, "7\n\r");
+			s2_thd=40;
+		}
+
+	}
 }
 
 
@@ -531,7 +531,7 @@ void turn_around_clockwise_speed(void){
  *
  * @return	true if the robot aligned itself to the left and false if the robot
  * 			aligned itself to the right.
-*/
+ */
 bool search_wall (void)
 {
 	while (!colision_detected(WALL_DETECTED))
@@ -561,7 +561,7 @@ bool search_wall (void)
  *
  * @return	true if the robot aligned itself to the left and false if the robot
  * 			aligned itself to the right.
-*/
+ */
 bool search_obstacle_turn (void)
 {
 	while (!colision_detected(300 ) && mode==DEEP_CLEANING )
@@ -585,89 +585,89 @@ bool search_obstacle_turn (void)
 /**
  * @brief	turns in circles anticlockwise around an obstacle
  *
-*/
+ */
 
 void turn_around_anticlockwise_speed(void){
 	chprintf((BaseSequentialStream *)&SD3, "prox[0] = %d prox[1] = %d prox[2] = %d prox[3] = %d prox[4] = %d prox[5] = %d prox[6] = %d prox[7] = %d \n\r",
-			    	get_calibrated_prox(0),
-					get_calibrated_prox(1),
-					get_calibrated_prox(2),
-					get_calibrated_prox(3),
-					get_calibrated_prox(4),
-					get_calibrated_prox(5),
-					get_calibrated_prox(6),
-					get_calibrated_prox(7));
+			get_calibrated_prox(0),
+			get_calibrated_prox(1),
+			get_calibrated_prox(2),
+			get_calibrated_prox(3),
+			get_calibrated_prox(4),
+			get_calibrated_prox(5),
+			get_calibrated_prox(6),
+			get_calibrated_prox(7));
 	uint16_t s7_thd=CLOSE_THR;
 	if (sensor_close_obstacle(SENSOR_6,CLOSE_THR)){
 		s7_thd=CLOSE_THR;
 	}
 	chprintf((BaseSequentialStream *)&SD3, "thr= %d \n\r",s7_thd);
 	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-				!sensor_close_obstacle(SENSOR_7,s7_thd) &&
-				!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
-				!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
-		{
-			left_motor_set_speed(350);
-			right_motor_set_speed(1000);
-			chprintf((BaseSequentialStream *)&SD3, "1\n\r");
+			!sensor_close_obstacle(SENSOR_7,s7_thd) &&
+			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
+	{
+		left_motor_set_speed(350);
+		right_motor_set_speed(1000);
+		chprintf((BaseSequentialStream *)&SD3, "1\n\r");
+		return;
+	}
+
+	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(5)*4/5) &&
+			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
+	{
+		if (sensor_close_obstacle(SENSOR_6,1200)){
+			right_motor_set_speed(-600);
+			left_motor_set_speed(600);
+			chprintf((BaseSequentialStream *)&SD3, "2\n\r");
 			return;
 		}
-
-		else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-				!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(5)*4/5) &&
-				!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
-				!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
-		{
-			if (sensor_close_obstacle(SENSOR_6,1200)){
-				right_motor_set_speed(-600);
-				left_motor_set_speed(600);
-				chprintf((BaseSequentialStream *)&SD3, "2\n\r");
-				return;
-			}
-			if (sensor_close_obstacle(SENSOR_6,3*CLOSE_THR)){
-				left_motor_set_speed(800);
-				right_motor_set_speed(0);
-				chprintf((BaseSequentialStream *)&SD3, "3\n\r");
-				return;
-			}
-			right_motor_set_speed(700);
-			left_motor_set_speed(700);
-			chprintf((BaseSequentialStream *)&SD3, "4\n\r");
+		if (sensor_close_obstacle(SENSOR_6,3*CLOSE_THR)){
+			left_motor_set_speed(800);
+			right_motor_set_speed(0);
+			chprintf((BaseSequentialStream *)&SD3, "3\n\r");
 			return;
 		}
-		else {
-			if (sensor_close_obstacle(SENSOR_8,CLOSE_THR+600)||
-					sensor_close_obstacle(SENSOR_1,CLOSE_THR+600)||
-					sensor_close_obstacle(SENSOR_2,CLOSE_THR+600)){
-				right_motor_set_speed(-600);
-				left_motor_set_speed(600);
-			}
-			else if (sensor_close_obstacle(SENSOR_8,CLOSE_THR+100)||
-					sensor_close_obstacle(SENSOR_1,CLOSE_THR+100)||
-					sensor_close_obstacle(SENSOR_2,CLOSE_THR+100)){
-				right_motor_set_speed(-300);
-				left_motor_set_speed(600);
-			}
-			else if (sensor_close_obstacle(SENSOR_8,CLOSE_THR-200)||
-					sensor_close_obstacle(SENSOR_1,CLOSE_THR-200)||
-					sensor_close_obstacle(SENSOR_2,CLOSE_THR-200)){
-				right_motor_set_speed(-120);
-				left_motor_set_speed(800);
-				chprintf((BaseSequentialStream *)&SD3, "5\n\r");
-			}
-			else if (sensor_close_obstacle(SENSOR_7,1200)){
-				right_motor_set_speed(-600);
-				left_motor_set_speed(600);
-				chprintf((BaseSequentialStream *)&SD3, "6\n\r");
-				return;
-			}else{
-				left_motor_set_speed(800);
-				right_motor_set_speed(-120);
-				chprintf((BaseSequentialStream *)&SD3, "7\n\r");
-				s7_thd=40;
-			}
-
+		right_motor_set_speed(700);
+		left_motor_set_speed(700);
+		chprintf((BaseSequentialStream *)&SD3, "4\n\r");
+		return;
+	}
+	else {
+		if (sensor_close_obstacle(SENSOR_8,CLOSE_THR+600)||
+				sensor_close_obstacle(SENSOR_1,CLOSE_THR+600)||
+				sensor_close_obstacle(SENSOR_2,CLOSE_THR+600)){
+			right_motor_set_speed(-600);
+			left_motor_set_speed(600);
 		}
+		else if (sensor_close_obstacle(SENSOR_8,CLOSE_THR+100)||
+				sensor_close_obstacle(SENSOR_1,CLOSE_THR+100)||
+				sensor_close_obstacle(SENSOR_2,CLOSE_THR+100)){
+			right_motor_set_speed(-300);
+			left_motor_set_speed(600);
+		}
+		else if (sensor_close_obstacle(SENSOR_8,CLOSE_THR-200)||
+				sensor_close_obstacle(SENSOR_1,CLOSE_THR-200)||
+				sensor_close_obstacle(SENSOR_2,CLOSE_THR-200)){
+			right_motor_set_speed(-120);
+			left_motor_set_speed(800);
+			chprintf((BaseSequentialStream *)&SD3, "5\n\r");
+		}
+		else if (sensor_close_obstacle(SENSOR_7,1200)){
+			right_motor_set_speed(-600);
+			left_motor_set_speed(600);
+			chprintf((BaseSequentialStream *)&SD3, "6\n\r");
+			return;
+		}else{
+			left_motor_set_speed(800);
+			right_motor_set_speed(-120);
+			chprintf((BaseSequentialStream *)&SD3, "7\n\r");
+			s7_thd=40;
+		}
+
+	}
 }
 
 static THD_WORKING_AREA(waThdCollision, 1024);
@@ -695,7 +695,7 @@ static THD_FUNCTION(ThdCollision, arg) {
  *
  * @param 	stop_value: value to set
  *
-*/
+ */
 void set_stop (bool stop_value){
 	stop =stop_value;
 }
@@ -706,7 +706,7 @@ void set_stop (bool stop_value){
  *
  * @param 	changing_value: value to set
  *
-*/
+ */
 void set_changing_mode(bool changing_value) {
 	changing_mode=changing_value;
 }
@@ -715,7 +715,7 @@ void set_changing_mode(bool changing_value) {
 /**
  * @brief	starts the thread responsible for detecting obstacles
  * 			while the robot is in go_home mode
-*/
+ */
 void threads_start(void){
 	chThdCreateStatic(waThdCollision, sizeof(waThdCollision), NORMALPRIO, ThdCollision, NULL);
 }
@@ -726,7 +726,7 @@ void threads_start(void){
  *
  * @param 	new_mode: new mode of the e_puck
  *
-*/
+ */
 void change_mode (mode_puck_t new_mode){
 	mode=new_mode;
 }
@@ -737,7 +737,7 @@ void change_mode (mode_puck_t new_mode){
  *
  * @return 	current mode
  *
-*/
+ */
 mode_puck_t get_mode (void){
 	return mode;
 }
@@ -752,7 +752,7 @@ bool get_calibrating(void){
  * @brief	main function used to operate the e-puck in soft cleaning mode.
  * 			In this mode the e-puck will ricochet on obstacles with an angle of
  * 			reflection equal to the angle of collision.
-*/
+ */
 void soft_cleaning(void)
 {
 	bool step=false;
@@ -791,7 +791,7 @@ void soft_cleaning(void)
 /**
  * @brief	operates the e-puck in halt mode: sets the motor's speed
  * 			to zero while in this mode
-*/
+ */
 void halt_mode(void)
 {
 	while (mode==HALT){
@@ -806,7 +806,7 @@ void halt_mode(void)
  * 			e-puck goes forward while no obstacle is detected then starts
  * 			circling around the first detected obstacle in a clockwise
  * 			or anticlockwise direction depending on the angle of collision
-*/
+ */
 void deep_cleaning(void)
 {
 	bool turn_clockwise=search_obstacle_turn();
@@ -831,7 +831,7 @@ void deep_cleaning(void)
 /**
  * @brief	sets the rgb leds with the color corresponding
  * 			to the halt mode
-*/
+ */
 void set_rgb_halt(void)
 {
 	set_rgb_led(LED2,RED);
@@ -845,7 +845,7 @@ void set_rgb_halt(void)
 /**
  * @brief	sets the rgb leds with the color corresponding
  * 			to the ricochet mode
-*/
+ */
 void set_rgb_soft_cleaning(void)
 {
 	set_rgb_led(LED2,BLUE);
@@ -859,7 +859,7 @@ void set_rgb_soft_cleaning(void)
 /**
  * @brief	sets the rgb leds with the color corresponding
  * 			to the turn_around mode
-*/
+ */
 void set_rgb_deep_cleaning(void)
 {
 	set_rgb_led(LED2,WHITE);
@@ -873,7 +873,7 @@ void set_rgb_deep_cleaning(void)
 /**
  * @brief	sets the rgb leds with the color corresponding
  * 			to the go_home mode
-*/
+ */
 void set_rbg_return_home(void)
 {
 	set_rgb_led(LED2,GREEN);
@@ -883,9 +883,9 @@ void set_rbg_return_home(void)
 }
 
 /**
-* @brief	sets the rgb leds with the color corresponding
-* 			to the charging_mode
-*/
+ * @brief	sets the rgb leds with the color corresponding
+ * 			to the charging_mode
+ */
 
 void set_rbg_charging(void)
 {
@@ -1031,7 +1031,7 @@ void charging (void){
 /**
  * @brief	operate the e-puck in the mode corresponding to the state
  * 			of the variable mode
-*/
+ */
 void operating_mode(void)
 {
 	while(1) {
