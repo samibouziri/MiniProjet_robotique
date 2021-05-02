@@ -79,28 +79,6 @@ int main(void)
 	}
 }
 
-/*int main(void)
-{
-	halInit();
-	chSysInit();
-	mpu_init();
-	messagebus_init(&bus, &bus_lock, &bus_condvar);
-	serial_start();
-	chThdSleepMilliseconds(2000);
-	motors_init();
-	proximity_start();
-	calibrate_ir();
-	bool clk = search_wall();
-	while (1)
-	{
-		if (clk)
-			turn_around_clockwise_speed();
-		else
-			turn_around_anticlockwise_speed();
-		chThdSleepMilliseconds(10);
-	}
-}*/
-
 
 
 #define STACK_CHK_GUARD 0xe2dee396
