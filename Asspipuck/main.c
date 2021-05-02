@@ -70,16 +70,37 @@ int main(void)
 	mic_start(&processAudioData);
 	robot_position_start();
 	threads_start();
-	VL53L0X_start();
 	dcmi_start();
 	po8030_start();
-	process_image_start();
 
 	while (1)
 	{
 		operating_mode();
 	}
 }
+
+/*int main(void)
+{
+	halInit();
+	chSysInit();
+	mpu_init();
+	messagebus_init(&bus, &bus_lock, &bus_condvar);
+	serial_start();
+	chThdSleepMilliseconds(2000);
+	motors_init();
+	proximity_start();
+	calibrate_ir();
+	bool clk = search_wall();
+	while (1)
+	{
+		if (clk)
+			turn_around_clockwise_speed();
+		else
+			turn_around_anticlockwise_speed();
+		chThdSleepMilliseconds(10);
+	}
+}*/
+
 
 
 #define STACK_CHK_GUARD 0xe2dee396
@@ -89,3 +110,4 @@ void __stack_chk_fail(void)
 {
 	chSysHalt("Stack smashing detected");
 }
+
