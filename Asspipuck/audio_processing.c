@@ -48,11 +48,12 @@ static uint8_t state [NB_STATES];
 #define FREQ_DEEP_CLEANING_H	(FREQ_DEEP_CLEANING+1)
 #define FREQ_HOME_L				(FREQ_HOME-1)
 #define FREQ_HOME_H				(FREQ_HOME+1)
-#define FREQ_CHARGING_L				(FREQ_CHARGING-1)
-#define FREQ_CHARGING_H				(FREQ_CHARGING+1)
+#define FREQ_CHARGING_L			(FREQ_CHARGING-1)
+#define FREQ_CHARGING_H			(FREQ_CHARGING+1)
 
 #define NO_INDEX		-1		//value given to the index when no index is chosen yet
 #define TIMEOUT_VALUE 	100		//timeout value
+#define MAX_COUNT		5		// number of times the frequency has to be detected before changing the mode
 
 
 /**
@@ -108,28 +109,28 @@ void sound_remote(float* data){
 			idx=i;
 		}
 	}
-	if (max> 5){
+	if (max> MAX_COUNT){
 		for (uint8_t i =0; i< NB_STATES; i++){
 			state[i]=0;
 		}
 		if (idx!=get_mode() && !get_calibrating() ){
 			switch (idx){
-			case 0:
+			case HALT:
 				set_stop(true);
 				set_changing_mode(true);
 				change_mode(HALT);
 				break;
-			case 1:
+			case SOFT_CLEANING:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(SOFT_CLEANING);
 				break;
-			case 2:
+			case DEEP_CLEANING:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(DEEP_CLEANING);
 				break;
-			case 3:
+			case RETURN_HOME:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(RETURN_HOME);
