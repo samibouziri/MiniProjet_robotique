@@ -27,7 +27,7 @@
 #define PERIMETER_EPUCK     	(M_PI * WHEEL_DISTANCE) // perimeter of the circle drawn by the wheels
 #define WHEEL_PERIMETER     	13.f
 #define TURN_STEP				((PERIMETER_EPUCK/WHEEL_PERIMETER)*NSTEP_ONE_TURN) //nb steps for one full turn
-#define CLOSE_THR				100
+#define CLOSE_THR				200
 #define MAX_DIST_MEAS			1200
 #define TIME_OF_MEAS			400
 #define DIST_IN_FRONT_OF_WALL	15
@@ -37,7 +37,7 @@
 #define HALT_SPEED				0
 #define QUARTER_TURN 			M_PI/2
 #define STEP_ROTATION 			M_PI/24
-#define DEG_TO_RAD(deg)			deg*M_PI/180
+#define DEG_TO_RAD(deg)			(deg*M_PI)/180
 #define MM_TO_CM(dist)			dist*0.1
 #define APPROACH_ANGLE			73
 #define PARALEL_TO_WALL_ANGLE	79
@@ -49,9 +49,9 @@
 #define MAX_DETECTION_COUNT		10
 #define RECOGNITION_TURN_SPEED  200
 #define WALL_DETECTED			800
-#define OBSTACLE_THR 				200
-#define THR_COEF				3
-#define THR_BIAS				0
+#define OBSTACLE_THR 			200
+#define THR_COEF				10
+#define THR_BIAS				40
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
 #define PERIOD					2*M_PI
@@ -92,7 +92,7 @@ float confine_angle (float alpha){
 	return alpha;
 }
 
-static THD_WORKING_AREA(waRobotPosition, 256);
+static THD_WORKING_AREA(waRobotPosition, 1024);
 static THD_FUNCTION(RobotPosition, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
@@ -296,7 +296,6 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 
 
 
-
 /**
  * @brief	moves the robot by a certain distance with a certain speed
  *
@@ -429,80 +428,94 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 
 }
 
-
 /**
  * @brief	turns in circles clockwise around an obstacle
  *
 */
-void turn_around_clockwise_speed(void){
-	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		right_motor_set_speed(400);
-		left_motor_set_speed(1000);
-		return;
-	}
-
-	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+40) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
-			right_motor_set_speed(800);
-			left_motor_set_speed(-800);
-			return;
-		}
-		right_motor_set_speed(600);
-		left_motor_set_speed(600);
-		return;
-	}
-	else {
-		left_motor_set_speed(-800);
-		right_motor_set_speed(800);
-	}
-}
-
-
-/*
 
 void turn_around_clockwise_speed(void){
-	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		right_motor_set_speed(TURN_INT_WHEEL_SPEED);
-		left_motor_set_speed(TURN_EXT_WHEEL_SPEED);
-		return;
+	chprintf((BaseSequentialStream *)&SD3, "prox[0] = %d prox[1] = %d prox[2] = %d prox[3] = %d prox[4] = %d prox[5] = %d prox[6] = %d prox[7] = %d \n\r",
+			    	get_calibrated_prox(0),
+					get_calibrated_prox(1),
+					get_calibrated_prox(2),
+					get_calibrated_prox(3),
+					get_calibrated_prox(4),
+					get_calibrated_prox(5),
+					get_calibrated_prox(6),
+					get_calibrated_prox(7));
+	uint16_t s2_thd=CLOSE_THR;
+	if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
+		s2_thd=CLOSE_THR;
 	}
-
-	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+THR_BIAS) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		if (sensor_close_obstacle(SENSOR_3,THR_COEF*CLOSE_THR)){
-			right_motor_set_speed(SPEED);
-			left_motor_set_speed(-SPEED);
-			chThdSleepMilliseconds(125);
+	chprintf((BaseSequentialStream *)&SD3, "thr= %d \n\r",s2_thd);
+	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+				!sensor_close_obstacle(SENSOR_2,s2_thd) &&
+				!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+				!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+		{
+			right_motor_set_speed(350);
+			left_motor_set_speed(1000);
+			chprintf((BaseSequentialStream *)&SD3, "1\n\r");
 			return;
 		}
-		right_motor_set_speed(SPEED);
-		left_motor_set_speed(SPEED);
-		return;
-	}
-	else {
-		left_motor_set_speed(-SPEED);
-		right_motor_set_speed(SPEED);
-		chThdSleepMilliseconds(125);
-	}
+
+		else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
+				!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*4/5) &&
+				!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
+				!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
+		{
+			if (sensor_close_obstacle(SENSOR_3,1200)){
+				right_motor_set_speed(600);
+				left_motor_set_speed(-600);
+				chprintf((BaseSequentialStream *)&SD3, "2\n\r");
+				return;
+			}
+			if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+				right_motor_set_speed(800);
+				left_motor_set_speed(0);
+				chprintf((BaseSequentialStream *)&SD3, "3\n\r");
+				return;
+			}
+			right_motor_set_speed(600);
+			left_motor_set_speed(600);
+			chprintf((BaseSequentialStream *)&SD3, "4\n\r");
+			return;
+		}
+		else {
+			if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+600)||
+					sensor_close_obstacle(SENSOR_8,CLOSE_THR+600)||
+					sensor_close_obstacle(SENSOR_7,CLOSE_THR+600)){
+				right_motor_set_speed(600);
+				left_motor_set_speed(-600);
+			}
+			else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR+100)||
+					sensor_close_obstacle(SENSOR_8,CLOSE_THR+100)||
+					sensor_close_obstacle(SENSOR_7,CLOSE_THR+100)){
+				right_motor_set_speed(600);
+				left_motor_set_speed(-300);
+			}
+			else if (sensor_close_obstacle(SENSOR_1,CLOSE_THR-200)||
+					sensor_close_obstacle(SENSOR_8,CLOSE_THR-200)||
+					sensor_close_obstacle(SENSOR_7,CLOSE_THR-200)){
+				right_motor_set_speed(800);
+				left_motor_set_speed(-120);
+				chprintf((BaseSequentialStream *)&SD3, "5\n\r");
+			}
+			else if (sensor_close_obstacle(SENSOR_2,1200)){
+				right_motor_set_speed(600);
+				left_motor_set_speed(-600);
+				chprintf((BaseSequentialStream *)&SD3, "6\n\r");
+				return;
+			}else{
+				left_motor_set_speed(-120);
+				right_motor_set_speed(800);
+				chprintf((BaseSequentialStream *)&SD3, "7\n\r");
+				s2_thd=40;
+			}
+
+		}
 }
 
-
-*/
 
 
 /**
@@ -923,10 +936,10 @@ void operating_mode(void)
 		case RETURN_HOME :
 			set_rbg_return_home();
 			go_and_avoid(HOME_POS);
-			calibrating=true;
-			turn_patern_recognition();
-			calibration ();
-			calibrating=false;
+		//	calibrating=true;
+		//	turn_patern_recognition();
+		//	calibration ();
+		//	calibrating=false;
 			while (mode==RETURN_HOME){
 				chThdSleepMilliseconds(5);
 			}

@@ -14,6 +14,7 @@ typedef enum{
   SOFT_CLEANING,
   DEEP_CLEANING,
   RETURN_HOME,
+  CHARGING
 }mode_puck_t;
 
 /**
@@ -136,5 +137,7 @@ void turn_patern_recognition(void);
  *      on its right and left)
  */
 void calibration (void);
+
+void deep_cleaning(void);
 
 #endif /* MOVEMENTS_H_ */
