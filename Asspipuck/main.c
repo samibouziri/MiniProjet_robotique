@@ -62,7 +62,7 @@ int main(void)
 	calibrate_ir();
 	mic_start(&processAudioData);
 	robot_position_start();
-	threads_start();
+	detect_collision_start();
 	dcmi_start();
 	po8030_start();
 
