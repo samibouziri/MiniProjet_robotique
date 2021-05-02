@@ -991,9 +991,9 @@ void charging (void){
 	calibrating=true;
 	go_and_avoid(HOME_POS);
 	turn_patern_recognition();
-
-	if(search_wall()){
-		while (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
+	bool direction= search_wall();
+	if(direction){
+		while (sensor_close_obstacle(SENSOR_3,CLOSE_THR-100)){
 			move_forward_speed(SPEED);
 			chThdSleepMilliseconds(10);
 		}
@@ -1001,7 +1001,7 @@ void charging (void){
 		rotate_rad(QUARTER_TURN, SPEED);
 
 	}else{
-		while (sensor_close_obstacle(SENSOR_6,CLOSE_THR)){
+		while (sensor_close_obstacle(SENSOR_6,CLOSE_THR-100)){
 			move_forward_speed(SPEED);
 			chThdSleepMilliseconds(10);
 		}
@@ -1021,6 +1021,11 @@ void charging (void){
 	chThdSleepMilliseconds(1000);
 	set_body_led(0);
 	move_forward(15,SPEED);
+	if (direction){
+		rotate_rad(QUARTER_TURN, SPEED);
+	}else{
+		rotate_rad(2*QUARTER_TURN, SPEED);
+	}
 	turn_patern_recognition();
 	calibration ();
 	calibrating=false;
