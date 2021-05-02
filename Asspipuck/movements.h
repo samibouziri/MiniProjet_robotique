@@ -17,128 +17,72 @@ typedef enum{
   CHARGING
 }mode_puck_t;
 
-/**
- * @brief	rotates the e_puck with a certain angle and speed
- *
- * @param	angle	angle of rotation (in rad)
- * @param	speed	speed of rotation (in step/s)
- */
-void rotate_rad(float angle, int16_t speed);
+
 
 /**
- * @brief	moves the robot forward with a certain speed
- *
- * @param 	distance (in cm) : distance to travel
- * @param 	speed (in step/s): speed of travel
-
+ * @brief	sets the starting position of the robot and starts the thread responsible
+ * 			for constantly tracking the position of the robot.
  */
-
-void move_forward(float distance, int16_t speed );
-
-/**
- * @brief	for a given angle of incidence of a collision with a
- * 			surface it returns the angle with which the e puck
- * 			should turn in order to be reflected
- *
- * @param 	angle_colision 	angle of incidence of the epuck(in rad)
- * @return	the angle with which the epuck must turn (in rad)
- */
-
-float angle_reflection (float angle_colision);
-
-/**
- * @brief	returns the translation of the epuck from the initalization point
- *
- * @return	the translation in cm
- */
-float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
-
-/**
- * @brief	returns the angle of rotation of the epuck from the initalization point
- *
- * @return	the angle of rotation in rad
- */
-float get_rotation (int32_t last_right_motor_pos,int32_t last_left_motor_pos);
-
-/**
- * @brief	converts a distance given in number of steps to a distance in cm
- *
- * @param 	nb_step 	distance in number of steps.
- * @return	distance in cm
- */
-float step_to_cm (int32_t nb_step);
-
-float get_x(void);
-
-
-
-float get_y(void);
-
-float get_angle(void);
-
 void robot_position_start(void);
-void go_to_xy (float abscisse, float ordonnee, int16_t speed);
-
-/**
- * @brief	for a given angle of incidence of a collision with a
- * 			surface it returns the angle with which the e puck
- * 			should turn in order to be reflected
- *
- * @param 	angle_colision 	angle of incidence of the epuck(in rad)
- * @return	the angle with which the epuck must turn (in rad)
- */
-void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l);
-
-void turn_around_clockwise_speed(void);
-
-bool search_wall (void);
 
 
 /**
- * @brief	turns in circle around an obstacle clockwise
+ * @brief	starts the thread responsible for detecting obstacles
+ * 			while the robot is returning home
+ */
+void detect_collision_start(void);
+
+
+/**
+ * @brief	change the mode of the e-puck to the given mode
+ *
+ * @param 	new_mode: new mode of the e_puck
  *
  */
-void go_and_avoid(float xg, float yg);
-
-void turn_around_anticlockwise_speed(void);
-
-void turn_around_clockwise_speed(void);
-
-void threads_start(void);
-
 void change_mode (mode_puck_t new_mode);
 
-void test_mode(void); ////////// à supprimer
 
-void ricochet_mode(void);
-
+/**
+ * @brief	operate the e-puck in the mode corresponding to the state
+ * 			of the variable mode
+ */
 void operating_mode(void);
 
+
+/**
+ * @brief	sets the stop variable with the given value
+ *
+ * @param 	stop_value: value to set
+ *
+ */
 void set_stop (bool stop_value);
 
+
+/**
+ * @brief	sets the changing_mode variable with the given value
+ *
+ * @param 	changing_value: value to set
+ *
+ */
 void set_changing_mode(bool changing_value);
 
+
+/**
+ * @brief	returns the current mode
+ *
+ * @return 	current mode
+ *
+ */
 mode_puck_t get_mode (void);
 
+
+/*
+ * @brief	checks if the robot is calibrating or not
+ *
+ * @return 	the state of 'calibrating' (true if the robot is
+ * 			calibrating, false otherwise)
+ */
 bool get_calibrating(void);
 
-void move_forward_speed( int16_t speed );
-
-/**
- * @brief turn until it recognize 2 lines with the same width and
- *      seperated by the width of one of them
- */
-void turn_patern_recognition(void);
-
-/**
- * @brief makes the e-puck go forward until it reaches a wall and
- *      then place itself in front of it by a distance of 15 cm
- *      and in the middle of it (assuming that there are walls
- *      on its right and left)
- */
-void calibration (void);
-void deep_cleaning(void);
-
-void deep_cleaning(void);
 
 #endif /* MOVEMENTS_H_ */
