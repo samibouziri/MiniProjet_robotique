@@ -37,7 +37,8 @@ static uint8_t state [NB_STATES];
 #define FREQ_SOFT_CLEANING		144	//2200Hz
 #define FREQ_DEEP_CLEANING		157	//2400Hz
 #define FREQ_HOME				170	//2600Hz
-#define MAX_FREQ				171	//we don't analyze after this index to not use resources for nothing
+#define FREQ_CHARGING			183 //2800 HZ
+#define MAX_FREQ				185	//we don't analyze after this index to not use resources for nothing
 
 #define FREQ_HALT_L				(FREQ_HALT-1)
 #define FREQ_HALT_H				(FREQ_HALT+1)
@@ -47,6 +48,8 @@ static uint8_t state [NB_STATES];
 #define FREQ_DEEP_CLEANING_H	(FREQ_DEEP_CLEANING+1)
 #define FREQ_HOME_L				(FREQ_HOME-1)
 #define FREQ_HOME_H				(FREQ_HOME+1)
+#define FREQ_CHARGING_L				(FREQ_CHARGING-1)
+#define FREQ_CHARGING_H				(FREQ_CHARGING+1)
 
 #define NO_INDEX		-1		//value given to the index when no index is chosen yet
 #define TIMEOUT_VALUE 	100		//timeout value
@@ -93,6 +96,9 @@ void sound_remote(float* data){
 	else if(max_norm_index >= FREQ_HOME_L && max_norm_index <= FREQ_HOME_H){
 		state[RETURN_HOME]++;
 	}
+	else if(max_norm_index >= FREQ_CHARGING_L && max_norm_index <= FREQ_CHARGING_H){
+		state[CHARGING]++;
+	}
 
 	uint8_t max=state[0];
 	uint8_t idx=0;
@@ -107,32 +113,31 @@ void sound_remote(float* data){
 			state[i]=0;
 		}
 		if (idx!=get_mode() && !get_calibrating() ){
-			set_front_led(0);
-			set_led(get_mode(), 0);
 			switch (idx){
 			case 0:
 				set_stop(true);
 				set_changing_mode(true);
 				change_mode(HALT);
-				set_led(idx, 1);
 				break;
 			case 1:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(SOFT_CLEANING);
-				set_led(idx, 1);
 				break;
 			case 2:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(DEEP_CLEANING);
-				set_led(idx, 1);
 				break;
 			case 3:
 				set_stop (true);
 				set_changing_mode(true);
 				change_mode(RETURN_HOME);
-				set_led(idx, 1);
+				break;
+			case CHARGING:
+				set_stop (true);
+				set_changing_mode(true);
+				change_mode(CHARGING);
 				break;
 			}
 		}
