@@ -137,6 +137,7 @@ void turn_patern_recognition(void);
  *      on its right and left)
  */
 void calibration (void);
+void deep_cleaning(void);
 
 void deep_cleaning(void);
 
