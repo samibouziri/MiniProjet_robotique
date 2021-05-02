@@ -22,7 +22,7 @@
 #define THETA5 		M_PI/2.f
 #define THETA6 		45*M_PI/180
 #define THETA7 		15*M_PI/180
-#define THRESHOLD 	200
+#define NO_OBS_VAL	3
 
 //wheights assigned for the different sensors
 static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA4-THETA5+M_PI/6 ,
@@ -37,28 +37,28 @@ static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-T
 float get_theta(uint8_t idx){
 	float theta1=0;
 	switch (idx){
-	case 0:
+	case SENSOR_1:
 		theta1=THETA0;
 		break;
-	case 1:
+	case SENSOR_2:
 		theta1=THETA1;
 		break;
-	case 2:
+	case SENSOR_3:
 		theta1=THETA2;
 		break;
-	case 3:
+	case SENSOR_4:
 		theta1=THETA3;
 		break;
-	case 4:
+	case SENSOR_5:
 		theta1=THETA4;
 		break;
-	case 5:
+	case SENSOR_6:
 		theta1=THETA5;
 		break;
-	case 6:
+	case SENSOR_7:
 		theta1=THETA6;
 		break;
-	case 7:
+	case SENSOR_8:
 		theta1=THETA7;
 		break;
 	}
@@ -161,49 +161,49 @@ region get_region(float angle){
 bool is_path_free(float angle){
 	switch (get_region(angle)){
 	case BACK:
-		if (get_calibrated_prox(3)<3 &&get_calibrated_prox(4)<3)
+		if (get_calibrated_prox(SENSOR_4)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_5)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case BACK_RIGHT:
-		if (get_calibrated_prox(2)<3 &&get_calibrated_prox(3)<3)
+		if (get_calibrated_prox(SENSOR_3)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_4)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case RIGHT:
-		if (get_calibrated_prox(1)<3 &&get_calibrated_prox(2)<3)
+		if (get_calibrated_prox(SENSOR_2)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_3)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case FRONT_RIGHT:
-		if (get_calibrated_prox(0)<3 &&get_calibrated_prox(1)<3)
+		if (get_calibrated_prox(SENSOR_1)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_2)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case FRONT:
-		if (get_calibrated_prox(7)<3 &&get_calibrated_prox(0)<3)
+		if (get_calibrated_prox(SENSOR_8)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_1)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case FRONT_LEFT:
-		if (get_calibrated_prox(6)<3 &&get_calibrated_prox(7)<3)
+		if (get_calibrated_prox(SENSOR_7)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_8)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case LEFT:
-		if (get_calibrated_prox(5)<3 &&get_calibrated_prox(6)<3)
+		if (get_calibrated_prox(SENSOR_6)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_7)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
 		break;
 	case BACK_LEFT:
-		if (get_calibrated_prox(4)<3 &&get_calibrated_prox(5)<3)
+		if (get_calibrated_prox(SENSOR_5)<NO_OBS_VAL &&get_calibrated_prox(SENSOR_6)<NO_OBS_VAL)
 			return true;
 		else
 			return false;
