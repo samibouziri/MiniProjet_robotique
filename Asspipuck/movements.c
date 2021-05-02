@@ -51,7 +51,7 @@
 #define WALL_DETECTED			800
 #define OBSTACLE_THR 			200
 #define THR_COEF				3
-#define THR_BIAS				0
+#define THR_BIAS				40
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
 #define PERIOD					2*M_PI
@@ -437,38 +437,6 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
  * @brief	turns in circles clockwise around an obstacle
  *
 */
-/*void turn_around_clockwise_speed(void){
-	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		right_motor_set_speed(400);
-		left_motor_set_speed(1000);
-		return;
-	}
-
-	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+40) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
-			right_motor_set_speed(800);
-			left_motor_set_speed(-800);
-			return;
-		}
-		right_motor_set_speed(800);
-		left_motor_set_speed(800);
-		return;
-	}
-	else {
-		left_motor_set_speed(-800);
-		right_motor_set_speed(800);
-	}
-}*/
-
-
 
 
 void turn_around_clockwise_speed(void){
@@ -514,8 +482,8 @@ void turn_around_clockwise_speed(void){
 				chprintf((BaseSequentialStream *)&SD3, "3\n\r");
 				return;
 			}
-			right_motor_set_speed(600);
-			left_motor_set_speed(600);
+			right_motor_set_speed(700);
+			left_motor_set_speed(700);
 			chprintf((BaseSequentialStream *)&SD3, "4\n\r");
 			return;
 		}
@@ -598,7 +566,7 @@ bool search_wall (void)
 */
 bool search_obstacle_turn (void)
 {
-	while (!colision_detected(OBSTACLE_THR ) && mode==DEEP_CLEANING )
+	while (!colision_detected(300 ) && mode==DEEP_CLEANING )
 	{
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
@@ -620,36 +588,6 @@ bool search_obstacle_turn (void)
  * @brief	turns in circles anticlockwise around an obstacle
  *
 */
-/*void turn_around_anticlockwise_speed(void){
-	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
-	{
-		right_motor_set_speed(TURN_EXT_WHEEL_SPEED);
-		left_motor_set_speed(TURN_INT_WHEEL_SPEED);
-		return;
-	}
-
-	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
-			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR+THR_BIAS)	)
-	{
-		if (sensor_close_obstacle(SENSOR_3,THR_COEF*CLOSE_THR)){
-			right_motor_set_speed(-SPEED);
-			left_motor_set_speed(SPEED);
-			return;
-		}
-		right_motor_set_speed(SPEED);
-		left_motor_set_speed(SPEED);
-		return;
-	}
-	else {
-		left_motor_set_speed(SPEED);
-		right_motor_set_speed(-SPEED);
-	}
-}*/
 
 void turn_around_anticlockwise_speed(void){
 	chprintf((BaseSequentialStream *)&SD3, "prox[0] = %d prox[1] = %d prox[2] = %d prox[3] = %d prox[4] = %d prox[5] = %d prox[6] = %d prox[7] = %d \n\r",
@@ -694,8 +632,8 @@ void turn_around_anticlockwise_speed(void){
 				chprintf((BaseSequentialStream *)&SD3, "3\n\r");
 				return;
 			}
-			right_motor_set_speed(600);
-			left_motor_set_speed(600);
+			right_motor_set_speed(700);
+			left_motor_set_speed(700);
 			chprintf((BaseSequentialStream *)&SD3, "4\n\r");
 			return;
 		}
