@@ -51,25 +51,42 @@ int main(void)
 	chSysInit();
 	mpu_init();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
+
+	//starts the serial communication
 	serial_start();
+
+	//starts the spi communication
 	spi_comm_start();
+
+	//starts the USB communication
 	usb_start();
 
+	//wait for the epuck to be stable
 	chThdSleepMilliseconds(2000);
 
+	//initialize the motors
 	motors_init();
+
+	//start the proximity sensors
 	proximity_start();
+
+	//calibrate the proximity sensors
 	calibrate_ir();
+
+	//start the microphone
 	mic_start(&processAudioData);
+
+	//start the robot position thread
 	robot_position_start();
+
+	//start the detection of collision
 	threads_start();
+
+	//starts the camera
 	dcmi_start();
 	po8030_start();
 
-	while (1)
-	{
-		operating_mode();
-	}
+	operating_mode();
 }
 
 
