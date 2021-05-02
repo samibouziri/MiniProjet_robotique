@@ -12,25 +12,25 @@
 
 
 typedef enum{
-  SENSOR_1,
-  SENSOR_2,
-  SENSOR_3,
-  SENSOR_4,
-  SENSOR_5,
-  SENSOR_6,
-  SENSOR_7,
-  SENSOR_8,
+	SENSOR_1,
+	SENSOR_2,
+	SENSOR_3,
+	SENSOR_4,
+	SENSOR_5,
+	SENSOR_6,
+	SENSOR_7,
+	SENSOR_8,
 }sensors_t;
 
 typedef enum{
- BACK,
- BACK_LEFT,
- LEFT,
- FRONT_LEFT,
- FRONT,
- FRONT_RIGHT,
- RIGHT,
- BACK_RIGHT
+	BACK,
+	BACK_LEFT,
+	LEFT,
+	FRONT_LEFT,
+	FRONT,
+	FRONT_RIGHT,
+	RIGHT,
+	BACK_RIGHT
 }region;
 
 /**
@@ -61,7 +61,21 @@ bool colision_detected (int threshold);
 
 bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold);
 
+/**
+ * @brief	detects the region of collision depending on the angle
+ * 			of collision
+ * @param 	angle (in rad): angle of collision
+ * @return 	region of collision
+ */
+
 region get_region(float angle);
+
+/**
+ * @brief	indicates if the path is free or not based on the region
+ * 			that has the highest value of detection
+ * @param 	angle (in rad): angle of collision
+ * @return 	true if the path is free, false otherwise
+ */
 
 bool is_path_free(float angle);
 
