@@ -31,14 +31,14 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-
+/*
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
-
+*/
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -59,25 +59,27 @@ int main(void)
 	mpu_init();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	serial_start();
-	spi_comm_start();
-	usb_start();
+//	spi_comm_start();
+//	usb_start();
 
 	chThdSleepMilliseconds(2000);
 
 	motors_init();
 	proximity_start();
 	calibrate_ir();
-	mic_start(&processAudioData);
-	robot_position_start();
-	threads_start();
-	VL53L0X_start();
-	dcmi_start();
-	po8030_start();
-	process_image_start();
+//	mic_start(&processAudioData);
+//	robot_position_start();
+//	threads_start();
+//	VL53L0X_start();
+//	dcmi_start();
+//	po8030_start();
+//	process_image_start();
 
+	change_mode(DEEP_CLEANING);
 	while (1)
 	{
-		operating_mode();
+		deep_cleaning();
+	//	operating_mode();
 	}
 }
 
