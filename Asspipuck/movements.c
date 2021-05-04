@@ -19,7 +19,7 @@
 #include <sensors/proximity.h>
 #include <process_image.h>
 #include <leds.h>
-#include <sensors/VL53L0X/VL53L0X.h>
+#include <tof.h>
 #include <sensors/VL53L0X/Api/core/inc/vl53l0x_api.h>
 
 #define NSTEP_ONE_TURN      	1000	//number of steps needed to do a full turn of the wheel
