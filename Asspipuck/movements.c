@@ -132,6 +132,8 @@ float confine_angle (float alpha){
 
 void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 {
+	//the static variable stop can be set to true(ie: robot is in front of an obstacle/ reached
+	//his goal position..) if so, this function doesn't move the robot.
 	if (!stop){
 		arrived =false;
 		bool stop_r=false;
@@ -172,6 +174,7 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 			}
 		}
 	}
+	//stop the mtors after each movement
 	right_motor_set_speed(HALT_SPEED);
 	left_motor_set_speed(HALT_SPEED);
 }
@@ -987,6 +990,12 @@ static THD_FUNCTION(ThdCollision, arg) {
 
 ////////////////////////////////////////////////////Public functions/////////////////////////////////////
 
+
+
+/**
+ * @brief	operate the e-puck in the mode corresponding to the state
+ * 			of the variable mode
+ */
 void operating_mode(void)
 {
 	while(1) {
