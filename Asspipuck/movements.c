@@ -64,6 +64,7 @@
 #define THR_CHARGING			200
 #define SENSOR_LOW_THR			40
 #define THR_COEF				3
+#define FORWARD_COEF			4/5
 #define THR_BIAS				40
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
@@ -400,12 +401,11 @@ void turn_around_clockwise_speed(void){
 	{
 		right_motor_set_speed(TURN_INT_WHEEL_SPEED);
 		left_motor_set_speed(TURN_EXT_WHEEL_SPEED);
-		chprintf((BaseSequentialStream *)&SD3, "1\n\r");
 		return;
 	}
 	//only sensor 3 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*4/5) &&
+			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*FORWARD_COEF) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
@@ -416,7 +416,7 @@ void turn_around_clockwise_speed(void){
 			return;
 		}
 		//robot close to obstacle -> rotation to avoid collision
-		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
+		if (sensor_close_obstacle(SENSOR_3,THR_COEF*CLOSE_THR)){
 			right_motor_set_speed(AVOID_SPEED);
 			left_motor_set_speed(0);
 			return;
