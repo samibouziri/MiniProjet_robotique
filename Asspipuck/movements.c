@@ -405,7 +405,7 @@ void turn_around_clockwise_speed(void){
 	}
 	//only sensor 3 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*FORWARD_COEF) &&
+			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(SENSOR_3)*FORWARD_COEF) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
@@ -558,7 +558,7 @@ void turn_around_anticlockwise_speed(void){
 	}
 	//only sensor 6 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(5)*4/5) &&
+			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(SENSOR_6)*FORWARD_COEF) &&
 			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
 	{
