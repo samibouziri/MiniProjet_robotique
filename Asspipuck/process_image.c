@@ -211,8 +211,9 @@ bool get_detected(void){
  * 			image and the thread responsible processing of the image
  */
 void process_image_start(void){
-	proImThd=chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 	captImThd=chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+	proImThd=chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
+
 }
 
 /**
