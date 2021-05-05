@@ -19,7 +19,7 @@
 #include <sensors/proximity.h>
 #include <process_image.h>
 #include <leds.h>
-#include <tof.h>
+#include <sensors/VL53L0X/VL53L0X.h>
 #include <sensors/VL53L0X/Api/core/inc/vl53l0x_api.h>
 
 #define NSTEP_ONE_TURN      	1000	//number of steps needed to do a full turn of the wheel
@@ -78,6 +78,7 @@
 #define DEEP_CLEANING_SLEEP		10		//sleeping time betwine each step when the robot is in deep cleaning mode
 #define CHARGING_SLEEP			5		//sleeping time for the robot after it has finished charging
 #define RETURN_HOME_SLEEP		5		//sleeping time for the robot after it has returned home
+#define STOP_SLEEP				5		//sleeping time for the robot after it has finished halt
 #define CHARGING_FORWARD_SLEEP	10		//sleeping time betwwen each step when the robot is advancing parallel to the wall
 #define BLINKING_TIME			500		//blinking period of the leds when the robot is charging
 #define FULLY_CHARGED_TIME		1000	//blinking time of the led after the robot has fully charger
@@ -650,56 +651,66 @@ void set_rbg_charging(void)
  * @param	yg:	ordinate of the goal locaztion (in cm)
  */
 void go_and_avoid(float xg, float yg){
+	// allow the change of the variable arrived and to stop the robot if
+	// an obstacle is detected
 	allow_arrived=true;
+
 	do
 	{
-		if (changing_mode){
-			right_motor_set_speed(HALT_SPEED);
-			left_motor_set_speed(HALT_SPEED);
-			return;
-		}
+		//allow the detection of collisions
 		chBSemSignal(&detect_obstacle_sem);
+		//go to the goal coordinates
 		go_to_xy (xg,yg,SPEED);
-		if (changing_mode)
+		//reset the stop variable if the robot is not changing the mode
+		if (!changing_mode)
 		{
-			right_motor_set_speed(HALT_SPEED);
-			left_motor_set_speed(HALT_SPEED);
-			return;
+			stop=false;
 		}
-		stop=false;
+		//verify that the robot hasn't arrived yet and the we are not changing modes
 		if(!arrived && !stop){
 			float alpha=0;
+
+			//allign the robot perpendicular to the wall and decides if it should turn
+			//clockwise or anticlockwise
 			if (allign_to_avoid ()){
 				do{
-					if (changing_mode){
-						right_motor_set_speed(HALT_SPEED);
-						left_motor_set_speed(HALT_SPEED);
-						return;
-					}
 					turn_around_clockwise_speed();
+					//let the robot go forward a bit
 					chThdSleepMilliseconds(GO_AND_AVOID_SLEEP);
+
+					//caculate the angle between the orientation of the robot and the goal
+					//coordinates to determine if it can leave or not
 					alpha =atan2f((yg-y),(xg-x))-angle;
 					alpha=confine_angle(alpha);
+
+					//verify if the robot should leave the obstacle or should stop
 				}while (!(alpha>MINIMAL_ANGLE_EXIT && alpha< MAXIMAL_ANGLE_EXIT) && !stop);
 			}
 			else{
 				do{
-					if (changing_mode){
-						right_motor_set_speed(HALT_SPEED);
-						left_motor_set_speed(HALT_SPEED);
-						return;
-					}
 					turn_around_anticlockwise_speed();
+
+					//let the robot go forward a bit
 					chThdSleepMilliseconds(GO_AND_AVOID_SLEEP);
+
+					//caculate the angle between the orientation of the robot and the goal
+					//coordinates to determine if it can leave or not
 					alpha =atan2f((yg-y),(xg-x))-angle;
 					alpha=confine_angle(alpha);
+
+					//verify if the robot should leave the obstacle or should stop
 				}while (!(alpha>-MAXIMAL_ANGLE_EXIT && alpha<-MINIMAL_ANGLE_EXIT) && !stop);
 			}
 			arrived=false;
 		}
+		//stop the motors
 		right_motor_set_speed(HALT_SPEED);
 		left_motor_set_speed(HALT_SPEED);
+
+		//exit if the robot arrived to destination or it is told to stop
 	}while (!arrived && !stop);
+
+	//stop the change the variable arrived
 	allow_arrived= false;
 }
 
@@ -710,9 +721,16 @@ void go_and_avoid(float xg, float yg){
  * 			seperated by the width of one of them
  */
 void turn_patern_recognition(void){
+
+	//start the processing of the images
 	process_image_start();
 	uint8_t count =0;
 	uint8_t err =ALLOWED_NUM_ERR;
+
+	// while the patern isn't recognized at least MAX_DETECTION_COUNT
+	// times with ALLOWED_NUM_ERR number of allowed errors to avoid
+	// recognizing noise the robot should blink the led1 and turn and
+	// stop to stabilize the image
 	while  (count <MAX_DETECTION_COUNT){
 		set_led(LED1,0);
 		if (!get_detected()){
@@ -728,6 +746,8 @@ void turn_patern_recognition(void){
 		count++;
 		chThdSleepMilliseconds(STABILIZATION_TIME);
 	}
+
+	//stop the process of the image
 	process_image_stop();
 }
 
@@ -738,57 +758,79 @@ void turn_patern_recognition(void){
  * 			on its right and left)
  */
 void calibration (void){
+	// start the TOF sensor
 	VL53L0X_start();
 	uint16_t dist_d =0;
 	uint16_t dist_g=0;
 	uint16_t dist_a=0;
 	set_stop (false);
+	// go forward until the robot reaches a wall and turn precisely perpendicular to the wall
 	if(search_wall()){
+		//anticlockwise sequence
 		set_front_led(1);
+		// get the distance to the left wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_g=VL53L0X_get_dist_mm();
 		}while (dist_g>MAX_DIST_MEAS);
+		//turn to the back wall
 		rotate_rad(-QUARTER_TURN, SPEED);
+		// get the distance to the back wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_a=VL53L0X_get_dist_mm();
 		}while (dist_a>MAX_DIST_MEAS);
+		//turn to the right wall (and insure the robot is perpendicular to the wall )
 		rotate_rad(-DEG_TO_RAD(APPROACH_ANGLE)+angle_colision(),SPEED);
 		rotate_rad(-DEG_TO_RAD(PARALEL_TO_WALL_ANGLE)+angle_colision(),SPEED);
+		// get the distance to the right wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_d=VL53L0X_get_dist_mm();
 		}while (dist_d>MAX_DIST_MEAS);
+		//recenter the robot according to the right and left wall
 		move_forward(MM_TO_CM((dist_d-(dist_g+dist_d)/2)),SPEED);
+		//face forward
 		rotate_rad(-QUARTER_TURN, SPEED);
 		set_front_led(0);
 	}
 	else{
+		//clockwise sequence
+
 		set_front_led(1);
+		// get the distance to the right wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_d=VL53L0X_get_dist_mm();
 		}while (dist_d>MAX_DIST_MEAS);
+		//turn to the back wall
 		rotate_rad(QUARTER_TURN, SPEED);
+		// get the distance to the back wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_a=VL53L0X_get_dist_mm();
 		}while (dist_a>MAX_DIST_MEAS);
+		//turn to the left wall (and insure the robot is perpendicular to the wall )
 		rotate_rad(DEG_TO_RAD(APPROACH_ANGLE)+angle_colision(),SPEED);
 		rotate_rad(DEG_TO_RAD(PARALEL_TO_WALL_ANGLE)+angle_colision(),SPEED);
+		// get the distance to the left wall (recalculate until the distance seems reasonable (<1.2m))
 		do{
 			chThdSleepMilliseconds(TIME_OF_MEAS);
 			dist_g=VL53L0X_get_dist_mm();
 		}while (dist_g>MAX_DIST_MEAS);
+		//recenter the robot according to the right and left wall
 		move_forward(MM_TO_CM((dist_g-(dist_g+dist_d)/2)),SPEED);
+		//face forward
 		rotate_rad(QUARTER_TURN, SPEED);
 		set_front_led(0);
 	}
+	//move away from the nearest wall by a certain distance
 	move_forward(DIST_IN_FRONT_OF_WALL-MM_TO_CM(dist_a),SPEED);
+	//reinitialize the cordinates and the angle
 	x=0;
 	y=0;
 	angle=0;
+	// stop the TOF sensor
 	VL53L0X_stop();
 }
 
@@ -797,16 +839,23 @@ void calibration (void){
  * @brief	main function to operate the e-puck in the charging mode
  */
 void charging (void){
+	//flag set to not interrupt the robot while calibrating
 	calibrating=true;
+	// returnnig to home position
 	go_and_avoid(HOME_POS);
+	// the robot turn around itself until it recognize a wall with a patern
 	turn_patern_recognition();
+	//go forward until it reaches the wall
 	bool direction= search_wall();
+	// follow the wall until it reaches its end
 	if(direction){
 		while (sensor_close_obstacle(SENSOR_3,THR_CHARGING)){
 			move_forward_speed(SPEED);
 			chThdSleepMilliseconds(CHARGING_FORWARD_SLEEP);
 		}
+		//go forward a bit further to not hit the wall when reverse
 		move_forward(CHARGING_FORWARD_STEP,SPEED);
+		//rotate to face forward
 		rotate_rad(QUARTER_TURN, SPEED);
 
 	}else{
@@ -814,11 +863,16 @@ void charging (void){
 			move_forward_speed(SPEED);
 			chThdSleepMilliseconds(CHARGING_FORWARD_SLEEP);
 		}
+		//go forward a bit further to not hit the wall when reverse
 		move_forward(CHARGING_FORWARD_STEP,SPEED);
+		//rotate to face forward
 		rotate_rad(-QUARTER_TURN, SPEED);
 	}
+	//reverse to enter the charging spot
 	move_forward(-CHARGING_BACKWARD_STEP,SPEED);
+
 	uint8_t count=0;
+	//blinking the leds to indicate that it is charging
 	while (count <NUMBER_OF_BLINKS){
 		set_rbg_charging();
 		chThdSleepMilliseconds(BLINKING_TIME);
@@ -826,15 +880,19 @@ void charging (void){
 		chThdSleepMilliseconds(BLINKING_TIME);
 		count ++;
 	}
+	//set body led to indicate that the charging is complete
 	set_body_led(1);
 	chThdSleepMilliseconds(FULLY_CHARGED_TIME);
 	set_body_led(0);
+	//move forward to be able to see the patern
 	move_forward(CHARGING_ADVANCE_STEP,SPEED);
+	// turn to speed up the patern recognition phase
 	if (direction){
 		rotate_rad(QUARTER_TURN, SPEED);
 	}else{
 		rotate_rad(2*QUARTER_TURN, SPEED);
 	}
+
 	turn_patern_recognition();
 	calibration();
 	calibrating=false;
@@ -853,33 +911,24 @@ void soft_cleaning(void)
 	bool step=false;
 	while (mode==SOFT_CLEANING)
 	{
-		while (step && mode==SOFT_CLEANING)
-		{
-			right_motor_set_speed(SPEED);
-			left_motor_set_speed(SPEED);
+		right_motor_set_speed(SPEED);
+		left_motor_set_speed(SPEED);
+		// if the robot has just turn it should go forward a little bit so
+		// that it doesn't detect the obstacle again
+		if (mode==SOFT_CLEANING && step) {
 			chThdSleepMilliseconds(SOFT_CLEANING_SLEEP);
 			step=false;
 		}
-		while (mode==SOFT_CLEANING && !colision_detected(WALL_DETECTED ))
-		{
-			right_motor_set_speed(SPEED);
-			left_motor_set_speed(SPEED);
-		}
+		// if a obstacle was detected turn by the right amount
 		if (mode==SOFT_CLEANING && colision_detected(WALL_DETECTED ))
 		{
 			rotate_rad(angle_reflection (angle_colision()),SPEED);
 			step=true;
 		}
-		if (mode!=SOFT_CLEANING)
-		{
-			right_motor_set_speed(HALT_SPEED);
-			left_motor_set_speed(HALT_SPEED);
-			return;
-		}
 	}
+	//stop motors and exit
 	right_motor_set_speed(HALT_SPEED);
 	left_motor_set_speed(HALT_SPEED);
-	return;
 }
 
 /**
@@ -890,19 +939,24 @@ void soft_cleaning(void)
  */
 void deep_cleaning(void)
 {
+	//	goes forward until it reaches an obstacle and turn perpendicular to
+	// it to prepare turning around around it and deciding if the robot should
+	// turn clockwise or anticlockwise
 	bool turn_clockwise=search_obstacle_turn();
+	//turning around the obstacle
 	while (mode==DEEP_CLEANING)
 	{
-		if (turn_clockwise && mode==DEEP_CLEANING)
+		if (turn_clockwise)
 		{
 			turn_around_clockwise_speed();
 		}
-		else if (!turn_clockwise && mode==DEEP_CLEANING)
+		else if (!turn_clockwise)
 		{
 			turn_around_anticlockwise_speed();
 		}
 		chThdSleepMilliseconds(DEEP_CLEANING_SLEEP);
 	}
+	//stopping the motors when finished
 	right_motor_set_speed(HALT_SPEED);
 	left_motor_set_speed(HALT_SPEED);
 	return;
@@ -916,8 +970,10 @@ void deep_cleaning(void)
 void halt_mode(void)
 {
 	while (mode==HALT){
+		//stop motors
 		right_motor_set_speed(HALT_SPEED);
 		left_motor_set_speed(HALT_SPEED);
+		chThdSleepMilliseconds(STOP_SLEEP);
 	}
 }
 
@@ -945,14 +1001,20 @@ static THD_FUNCTION(RobotPosition, arg) {
 
 	chThdSleepMilliseconds(ROBOT_POSITION_SLEEP);
 	while(1){
+		//capture time
 		time=chVTGetSystemTime();
 		amplitude = get_translation(last_right_motor_pos,last_left_motor_pos);
+		//update the angle of rotation of the robot
 		angle+= get_rotation(last_right_motor_pos,last_left_motor_pos);
+		//making sure it doesn't exceed pi or go below -pi
 		angle=confine_angle(angle);
+		//updating the last position of the motors for the next measurement
 		last_right_motor_pos=right_motor_get_pos();
 		last_left_motor_pos=left_motor_get_pos();
+		// update the coordinates of the robot
 		x+=amplitude*cosf(angle);
 		y+=amplitude*sinf(angle);
+		//update the position every ROBOT_POSITION_SLEEP miiliseconds
 		chThdSleepUntilWindowed(time, time + MS2ST(ROBOT_POSITION_SLEEP));
 
 	}
@@ -972,12 +1034,15 @@ static THD_FUNCTION(ThdCollision, arg) {
 
 	while (true)
 	{
-
+		//wait until the need to detect an obstacle
 		chBSemWait(&detect_obstacle_sem);
 		while (!colision_detected(OBSTACLE_THR ) && allow_arrived)
 		{
+			//obstacle not detected
 			chThdSleepMilliseconds(COLLISION_SLEEP);
 		}
+		// an obstacle was found and there is still
+		// the need to detect an obstacle
 		if (allow_arrived) {
 			stop=true;
 		}
@@ -1013,12 +1078,14 @@ void operating_mode(void)
 		case RETURN_HOME :
 			set_rbg_return_home();
 			go_and_avoid(HOME_POS);
+			//calibration sequence
 			if (!stop){
 				calibrating=true;
 				turn_patern_recognition();
 				calibration ();
 				calibrating=false;
 			}
+			// return home finished and waiting for a new mode
 			while (mode==RETURN_HOME){
 				chThdSleepMilliseconds(RETURN_HOME_SLEEP);
 			}
@@ -1028,6 +1095,7 @@ void operating_mode(void)
 			set_rbg_charging();
 			charging ();
 			set_body_led(1);
+			// charging finished and waiting for a new mode
 			while (mode==CHARGING){
 				chThdSleepMilliseconds(CHARGING_SLEEP);
 			}
