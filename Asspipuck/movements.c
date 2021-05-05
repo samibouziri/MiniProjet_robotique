@@ -19,7 +19,7 @@
 #include <sensors/proximity.h>
 #include <process_image.h>
 #include <leds.h>
-#include <tof.h>
+#include <sensors/VL53L0X/VL53L0X.h>
 #include <sensors/VL53L0X/Api/core/inc/vl53l0x_api.h>
 
 #define NSTEP_ONE_TURN      	1000	//number of steps needed to do a full turn of the wheel
@@ -135,13 +135,16 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 	//the static variable stop can be set to true(ie: robot is in front of an obstacle/ reached
 	//his goal position..) if so, this function doesn't move the robot.
 	if (!stop){
+		//if the robot doesn't need to stop, then it still hasn't reached his goal -> arrived is set
+		// to false.
 		arrived =false;
+		//to stop each wheel independently if they have different travel distances
 		bool stop_r=false;
 		bool stop_l=false;
-
+		//set the starting position of each wheel before moving
 		int32_t right_pos =right_motor_get_pos();
 		int32_t left_pos =left_motor_get_pos();
-
+		//if the given goal position is negative, the wheel goes backward
 		if (pos_r<0)
 			speed_r=-abs(speed_r);
 		else
@@ -152,19 +155,23 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 			speed_l=abs(speed_l);
 		right_motor_set_speed(speed_r);
 		left_motor_set_speed(speed_l);
-
+		//if the robot needs to stop midway before reaching his goal (ie there is an obstacle ahead
+		//or the operating mode has changed)
 		while (!stop)
 		{
+			//if the right wheel has reached its goal -> stop the right wheel
 			if (abs(right_motor_get_pos()-right_pos)>=abs(pos_r*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
 			{
 				stop_r=true;
 				right_motor_set_speed(HALT_SPEED);
 			}
+			//if the left wheel has reached its goal -> stop the left wheel
 			if (abs(left_motor_get_pos()-left_pos)>=abs(pos_l*(NSTEP_ONE_TURN/WHEEL_PERIMETER)))
 			{
 				stop_l=true;
 				left_motor_set_speed(HALT_SPEED);
 			}
+			//both wheels reached their goal->the robot has reached his goal position
 			if (stop_r && stop_l) {
 				if (allow_arrived)
 				{
@@ -174,7 +181,8 @@ void position_mode(float pos_r, float pos_l, int16_t speed_r,  int16_t speed_l)
 			}
 		}
 	}
-	//stop the mtors after each movement
+	//stop the motors if the robot reached its goal or if it need to stop for any other reason (ie the
+	//operating mode has changed, the robot is facing an obstacle...)
 	right_motor_set_speed(HALT_SPEED);
 	left_motor_set_speed(HALT_SPEED);
 }
@@ -200,11 +208,13 @@ void rotate_rad(float alpha, int16_t speed)
  * @return	true if rotation done to the left, false if rotation done to the right
  */
 bool allign_to_avoid (void){
+	//rotate to the left if the obstacle is on the right of the robot
 	if (angle_colision()<0)
 	{
 		rotate_rad(M_PI/2+angle_colision(),SPEED);
 		return true;
 	}
+	//rotate to the right if the obstacle is on the left of the robot
 	else
 	{
 		rotate_rad(-M_PI/2+angle_colision(),SPEED);
@@ -215,7 +225,7 @@ bool allign_to_avoid (void){
 
 
 /**
- * @brief	for a given angle of incidence of a collision with a
+ * @brief	for a given angle of collision with a
  * 			surface it returns the angle with which the e puck
  * 			should turn in order to be reflected
  *
@@ -223,6 +233,7 @@ bool allign_to_avoid (void){
  * @return	the angle with which the epuck must turn (in rad)
  */
 float angle_reflection (float angle_colision){
+	//confine the angle of collision if the calculated value is off limits
 	if (angle_colision>MAX_ANGLE_COLISION)
 		angle_colision=MAX_ANGLE_COLISION;
 	if (angle_colision<-MAX_ANGLE_COLISION)
@@ -234,9 +245,6 @@ float angle_reflection (float angle_colision){
 		return M_PI+2*angle_colision;
 	}
 }
-
-
-
 
 
 
@@ -359,6 +367,7 @@ float get_angle(void) {
  * @param	speed (in step/s): speed of travel
  */
 void go_to_xy (float abscisse, float ordonnee, int16_t speed){
+	// divide the path into multiple paths with small travel distance to minimise the error
 	for (uint8_t i=0; i<NUM_PARTS; i++){
 		float alpha =atan2f((ordonnee-y),(abscisse-x))-angle;
 		alpha=confine_angle(alpha);
@@ -372,13 +381,17 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
  * @brief	turns in circles clockwise around an obstacle
  *
  */
-
-
 void turn_around_clockwise_speed(void){
-	uint16_t s2_thd=CLOSE_THR;
+
+	//we use different thresholds for the sensor 2 depending on the position of the robot (lower threshold on
+	//sensor 2 -> prone to rotate left
+	static uint16_t s2_thd=CLOSE_THR;
+	//if sensor 3 is close to an obstacle, give sensor 2 a high threshold (no need to prioritize the
+	//rotation to the left)
 	if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
 		s2_thd=CLOSE_THR;
 	}
+	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_2,s2_thd) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
@@ -389,50 +402,62 @@ void turn_around_clockwise_speed(void){
 		chprintf((BaseSequentialStream *)&SD3, "1\n\r");
 		return;
 	}
-
+	//only sensor 3 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(2)*4/5) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
+		//robot too close to obstacle -> in place rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_3,ROTATE_CLOSE_THR)){
 			right_motor_set_speed(ROTATE_SPEED);
 			left_motor_set_speed(-ROTATE_SPEED);
 			return;
 		}
+		//robot close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_3,3*CLOSE_THR)){
 			right_motor_set_speed(AVOID_SPEED);
 			left_motor_set_speed(0);
 			return;
 		}
+		//robot is at the right distance from the wall -> go forward
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
 		return;
 	}
 	else {
+		//obstacle in front of the robot -> rotate depending on the distance to the obstacle:
+
+		//robot too close to obstacle -> in place rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_1,FRONT_THR_CLOSE)||
 			sensor_close_obstacle(SENSOR_8,FRONT_THR_CLOSE)||
 			sensor_close_obstacle(SENSOR_7,FRONT_THR_CLOSE)){
 			right_motor_set_speed(ROTATE_SPEED);
 			left_motor_set_speed(-ROTATE_SPEED);
 		}
+		//robot close to obstacle -> rotate to avoid collision
 		else if (sensor_close_obstacle(SENSOR_1,FRONT_THR_MEDIUM)||
 				sensor_close_obstacle(SENSOR_8,FRONT_THR_MEDIUM)||
 				sensor_close_obstacle(SENSOR_7,FRONT_THR_MEDIUM)){
 			right_motor_set_speed(ROTATE_SPEED);
 			left_motor_set_speed(-AVOID_MEDIUM_SPEED);
 		}
+		//robot heading towards wall but still not too close-> small rotation to prepare in advance for
+		//the avoidance of the incoming obstacle
 		else if (sensor_close_obstacle(SENSOR_1,FRONT_THR_FAR)||
 				sensor_close_obstacle(SENSOR_8,FRONT_THR_FAR)||
 				sensor_close_obstacle(SENSOR_7,FRONT_THR_FAR)){
 			right_motor_set_speed(AVOID_SPEED);
 			left_motor_set_speed(-AVOID_LOW_SPEED);
 		}
+		//robot too close diagonally to an obstacle -> in place rotation to avoid collision
 		else if (sensor_close_obstacle(SENSOR_2,ROTATE_CLOSE_THR)){
 			right_motor_set_speed(ROTATE_SPEED);
 			left_motor_set_speed(-ROTATE_SPEED);
 			return;
 		}else{
+			//sums all the cases where the robot needs to avoid an obstacle (surrounded by walls, dead end, etc..)
+			//lowers the threshold on sensor 2 -> make the robot prone to rotate left.
 			left_motor_set_speed(-AVOID_LOW_SPEED);
 			right_motor_set_speed(AVOID_SPEED);
 			s2_thd=SENSOR_LOW_THR;
@@ -440,9 +465,6 @@ void turn_around_clockwise_speed(void){
 
 	}
 }
-
-
-
 
 
 
@@ -455,18 +477,21 @@ void turn_around_clockwise_speed(void){
  */
 bool search_wall (void)
 {
+	//go forward if no obstacle is ahead
 	while (!colision_detected(WALL_DETECTED))
 	{
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
 	}
 	stop=false;
+	//rotate to the left if the obstacle is on the right of the robot
 	if (angle_colision()<0)
 	{
 		rotate_rad(DEG_TO_RAD(APPROACH_ANGLE1)+angle_colision(),SPEED);
 		rotate_rad(DEG_TO_RAD(PARALEL_TO_WALL_ANGLE1)+angle_colision(),SPEED);
 		return true;
 	}
+	//rotate to the right if the obstacle is on the left of the robot
 	else
 	{
 		rotate_rad(-DEG_TO_RAD(APPROACH_ANGLE1)+angle_colision(),SPEED);
@@ -477,7 +502,7 @@ bool search_wall (void)
 
 
 /**
- * @brief	goes forward while no obstacle is detected while the robot is in
+ * @brief	go forward while no obstacle is detected while the robot is in
  * 			deep cleaning mode, then align the robot if in front of an obstacle
  *
  * @return	true if the robot aligned itself to the left and false if the robot
@@ -485,16 +510,19 @@ bool search_wall (void)
  */
 bool search_obstacle_turn (void)
 {
-	while (!colision_detected(300 ) && mode==DEEP_CLEANING )
+	//go forward if no obstacle is ahead
+	while (!colision_detected(CLOSE_THR ) && mode==DEEP_CLEANING )
 	{
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
 	}
+	//rotate to the left if the obstacle is on the right of the robot
 	if (angle_colision()<0)
 	{
 		rotate_rad(M_PI/2+angle_colision(),SPEED);
 		return true;
 	}
+	//rotate to the right if the obstacle is on the left of the robot
 	else
 	{
 		rotate_rad(-M_PI/2+angle_colision(),SPEED);
@@ -507,12 +535,17 @@ bool search_obstacle_turn (void)
  * @brief	turns in circles anticlockwise around an obstacle
  *
  */
-
 void turn_around_anticlockwise_speed(void){
-	uint16_t s7_thd=CLOSE_THR;
+
+	//we use different thresholds for the sensor 7 depending on the position of the robot (lower threshold on
+	//sensor 7 -> prone to rotate right
+	static uint16_t s7_thd=CLOSE_THR;
+	//if sensor 6 is close to an obstacle, give sensor 7 a high threshold (no need to prioritize the
+	//rotation to the right)
 	if (sensor_close_obstacle(SENSOR_6,CLOSE_THR)){
 		s7_thd=CLOSE_THR;
 	}
+	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_7,s7_thd) &&
 			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
@@ -522,50 +555,62 @@ void turn_around_anticlockwise_speed(void){
 		right_motor_set_speed(TURN_EXT_WHEEL_SPEED);
 		return;
 	}
-
+	//only sensor 6 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(5)*4/5) &&
 			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
 	{
+		//robot too close to obstacle -> in place rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_6,ROTATE_CLOSE_THR)){
 			right_motor_set_speed(-ROTATE_SPEED);
 			left_motor_set_speed(ROTATE_SPEED);
 			return;
 		}
+		//robot close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_6,3*CLOSE_THR)){
 			left_motor_set_speed(AVOID_SPEED);
 			right_motor_set_speed(0);
 			return;
 		}
+		//robot is at the right distance from the wall -> go forward
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
 		return;
 	}
 	else {
+		//obstacle in front of the robot -> rotate depending on the distance to the obstacle:
+
+		//robot too close to obstacle -> in place rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_8,FRONT_THR_CLOSE)||
 			sensor_close_obstacle(SENSOR_1,FRONT_THR_CLOSE)||
 			sensor_close_obstacle(SENSOR_2,FRONT_THR_CLOSE)){
 			right_motor_set_speed(-ROTATE_SPEED);
 			left_motor_set_speed(ROTATE_SPEED);
 		}
+		//robot close to obstacle -> rotate to avoid collision
 		else if (sensor_close_obstacle(SENSOR_8,FRONT_THR_MEDIUM)||
 				sensor_close_obstacle(SENSOR_1,FRONT_THR_MEDIUM)||
 				sensor_close_obstacle(SENSOR_2,FRONT_THR_MEDIUM)){
 			right_motor_set_speed(-AVOID_MEDIUM_SPEED);
 			left_motor_set_speed(ROTATE_SPEED);
 		}
+		//robot heading towards wall but still not too close-> small rotation to prepare in advance for
+		//the avoidance of the incoming obstacle
 		else if (sensor_close_obstacle(SENSOR_8,FRONT_THR_FAR)||
 				sensor_close_obstacle(SENSOR_1,FRONT_THR_FAR)||
 				sensor_close_obstacle(SENSOR_2,FRONT_THR_FAR)){
 			right_motor_set_speed(-AVOID_LOW_SPEED);
 			left_motor_set_speed(AVOID_SPEED);
 		}
+		//robot too close diagonally to an obstacle -> in place rotation to avoid collision
 		else if (sensor_close_obstacle(SENSOR_7,ROTATE_CLOSE_THR)){
 			right_motor_set_speed(-ROTATE_SPEED);
 			left_motor_set_speed(ROTATE_SPEED);
 			return;
 		}else{
+			//sums all the cases where the robot needs to avoid an obstacle (surrounded by walls, dead end, etc..)
+			//lowers the threshold on sensor 7 -> make the robot prone to rotate right.
 			left_motor_set_speed(AVOID_SPEED);
 			right_motor_set_speed(-AVOID_LOW_SPEED);
 			s7_thd=SENSOR_LOW_THR;
