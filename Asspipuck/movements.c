@@ -418,7 +418,7 @@ void turn_around_clockwise_speed(void){
 		//robot close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_3,THR_COEF*CLOSE_THR)){
 			right_motor_set_speed(AVOID_SPEED);
-			left_motor_set_speed(0);
+			left_motor_set_speed(HALT_SPEED);
 			return;
 		}
 		//robot is at the right distance from the wall -> go forward
@@ -571,7 +571,7 @@ void turn_around_anticlockwise_speed(void){
 		//robot close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_6,THR_COEF*CLOSE_THR)){
 			left_motor_set_speed(AVOID_SPEED);
-			right_motor_set_speed(0);
+			right_motor_set_speed(HALT_SPEED);
 			return;
 		}
 		//robot is at the right distance from the wall -> go forward
