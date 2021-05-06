@@ -21,7 +21,7 @@
 #include <communications.h>
 #include <arm_math.h>
 
-#include <sensors/VL53L0X/VL53L0X.h>
+#include <tof.h>
 #include <sensors/VL53L0X/Api/core/inc/vl53l0x_api.h>
 #include <process_image.h>
 
