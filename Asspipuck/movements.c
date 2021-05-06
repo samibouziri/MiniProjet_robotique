@@ -387,7 +387,7 @@ void turn_around_clockwise_speed(void){
 
 	//we use different thresholds for the sensor 2 depending on the position of the robot (lower threshold on
 	//sensor 2 -> prone to rotate left
-	static uint16_t s2_thd=CLOSE_THR;
+	uint16_t s2_thd=CLOSE_THR;
 	//if sensor 3 is close to an obstacle, give sensor 2 a high threshold (no need to prioritize the
 	//rotation to the left)
 	if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
@@ -540,7 +540,7 @@ void turn_around_anticlockwise_speed(void){
 
 	//we use different thresholds for the sensor 7 depending on the position of the robot (lower threshold on
 	//sensor 7 -> prone to rotate right
-	static uint16_t s7_thd=CLOSE_THR;
+	uint16_t s7_thd=CLOSE_THR;
 	//if sensor 6 is close to an obstacle, give sensor 7 a high threshold (no need to prioritize the
 	//rotation to the right)
 	if (sensor_close_obstacle(SENSOR_6,CLOSE_THR)){
