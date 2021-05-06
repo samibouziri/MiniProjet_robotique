@@ -32,7 +32,7 @@ bool line_detection(const uint8_t* image,uint32_t mean);
 
 //----------Private Function----------
 
-static THD_WORKING_AREA(waCaptureImage, 256);
+static THD_WORKING_AREA(waCaptureImage, 512);
 static THD_FUNCTION(CaptureImage, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
@@ -55,7 +55,7 @@ static THD_FUNCTION(CaptureImage, arg) {
 }
 
 
-static THD_WORKING_AREA(waProcessImage, 1024);
+static THD_WORKING_AREA(waProcessImage, 2048);
 static THD_FUNCTION(ProcessImage, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
