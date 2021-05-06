@@ -385,14 +385,6 @@ void go_to_xy (float abscisse, float ordonnee, int16_t speed){
  */
 void turn_around_clockwise_speed(void){
 
-	//we use different thresholds for the sensor 2 depending on the position of the robot (lower threshold on
-	//sensor 2 -> prone to rotate left
-	//static uint16_t s2_thd=CLOSE_THR;
-	//if sensor 3 is close to an obstacle, give sensor 2 a high threshold (no need to prioritize the
-	//rotation to the left)
-	/*if (sensor_close_obstacle(SENSOR_3,CLOSE_THR)){
-		s2_thd=CLOSE_THR;
-	}*/
 	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
@@ -461,7 +453,6 @@ void turn_around_clockwise_speed(void){
 			//lowers the threshold on sensor 2 -> make the robot prone to rotate left.
 			left_motor_set_speed(-AVOID_LOW_SPEED);
 			right_motor_set_speed(AVOID_SPEED);
-			//s2_thd=SENSOR_LOW_THR;
 		}
 
 	}
@@ -538,14 +529,6 @@ bool search_obstacle_turn (void)
  */
 void turn_around_anticlockwise_speed(void){
 
-	//we use different thresholds for the sensor 7 depending on the position of the robot (lower threshold on
-	//sensor 7 -> prone to rotate right
-	//static uint16_t s7_thd=CLOSE_THR;
-	//if sensor 6 is close to an obstacle, give sensor 7 a high threshold (no need to prioritize the
-	//rotation to the right)
-/*	if (sensor_close_obstacle(SENSOR_6,CLOSE_THR)){
-		s7_thd=CLOSE_THR;
-	}*/
 	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR) &&
@@ -614,7 +597,6 @@ void turn_around_anticlockwise_speed(void){
 			//lowers the threshold on sensor 7 -> make the robot prone to rotate right.
 			left_motor_set_speed(AVOID_SPEED);
 			right_motor_set_speed(-AVOID_LOW_SPEED);
-		//	s7_thd=SENSOR_LOW_THR;
 		}
 
 	}
