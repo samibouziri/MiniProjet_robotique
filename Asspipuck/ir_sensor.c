@@ -28,8 +28,7 @@
 #define NO_OBS_VAL	3
 
 //wheights assigned for the different sensors
-static const float WHEIGHT []={THETA7+(THETA6-THETA7)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA4-THETA5+M_PI/6 ,
-		THETA4-THETA5+M_PI/6 ,THETA5-THETA6+(THETA4-THETA5)/2 ,THETA6-THETA7+(THETA5-THETA6)/2 ,THETA7+(THETA6-THETA7)/2};
+static const float WHEIGHT []={1,1,2,2,2,2,1,1};
 
 /**
  * @brief	return the angle of a sensor

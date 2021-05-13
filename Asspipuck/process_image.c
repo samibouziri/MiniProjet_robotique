@@ -30,6 +30,7 @@ static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 #define NB_PIXEL_FOR_STABILIZATION	10
 #define MIN_DECREASE				15
 #define MIN_WIDTH					5
+#define PROPORTIONALITY_FACTOR		2
 
 
 /**
@@ -189,9 +190,9 @@ bool line_detection(const uint8_t* image,uint32_t mean)
 		//verification that the second line is valid and the two lines and the white space between them
 		//have nearly the same width (taking into account the distortion of the image )
 		if ( 	widthline1>MIN_WIDTH &&
-				(widthline1<=widthline*2 && widthline1>=widthline/2) &&
-				((abs(centerline-centerline1)-widthline1/2-widthline/2)<=widthline*2 &&
-						( abs(centerline-centerline1)-widthline1/2-widthline/2)>=widthline/2))
+				(widthline1<=widthline*PROPORTIONALITY_FACTOR && widthline1>=widthline/PROPORTIONALITY_FACTOR) &&
+				((abs(centerline-centerline1)-widthline1/2-widthline/2)<=widthline*PROPORTIONALITY_FACTOR &&
+						( abs(centerline-centerline1)-widthline1/2-widthline/2)>=widthline/PROPORTIONALITY_FACTOR))
 		{
 			return true ;
 		}
