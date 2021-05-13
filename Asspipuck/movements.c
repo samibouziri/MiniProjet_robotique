@@ -44,8 +44,8 @@
 #define MM_TO_CM(dist)			dist*0.1
 #define APPROACH_ANGLE			73
 #define PARALEL_TO_WALL_ANGLE	79
-#define APPROACH_ANGLE1			75
-#define PARALEL_TO_WALL_ANGLE1	81
+#define APPROACH_ANGLE1			76
+#define PARALEL_TO_WALL_ANGLE1	82
 #define ALLOWED_NUM_ERR			2
 #define STABILIZATION_TIME		150
 #define MIN_DETECTION_COUNT		2
@@ -64,7 +64,7 @@
 #define THR_CHARGING			200
 #define SENSOR_LOW_THR			40
 #define THR_COEF				3
-#define FORWARD_COEF			4/5
+#define FORWARD_COEF			3/4
 #define THR_BIAS				40
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
@@ -387,7 +387,7 @@ void turn_around_clockwise_speed(void){
 
 	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+200) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
@@ -403,8 +403,8 @@ void turn_around_clockwise_speed(void){
 	{
 		//robot too close to obstacle -> in place rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_3,ROTATE_CLOSE_THR)){
-			right_motor_set_speed(ROTATE_SPEED);
-			left_motor_set_speed(-ROTATE_SPEED);
+			right_motor_set_speed(TURN_EXT_WHEEL_SPEED);
+			left_motor_set_speed(TURN_INT_WHEEL_SPEED);
 			return;
 		}
 		//robot close to obstacle -> rotation to avoid collision
