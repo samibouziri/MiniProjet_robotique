@@ -1,8 +1,11 @@
-/*
- * tof.c
+/*	Project: AspiPuck
+ * 	tof.c
  *
- *  Created on: 4 mai 2021
- *      Author: sami bouziri
+ *  Created on: 7 avr. 2021
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was created by the authors.
  */
 
 #include "ch.h"

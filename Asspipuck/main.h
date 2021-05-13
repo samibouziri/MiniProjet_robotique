@@ -1,3 +1,13 @@
+/*	Project: AspiPuck
+ * 	main.h
+ *
+ *  Created on: 7 avr. 2021
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was created by the authors.
+ */
+
 #ifndef MAIN_H
 #define MAIN_H
 

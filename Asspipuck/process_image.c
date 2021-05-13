@@ -1,3 +1,14 @@
+/*	Project: AspiPuck
+ * 	process_image.c
+ *
+ *  Created on: 7 avr. 2021
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was modified by the authors. The original document was given in the
+ * moodle of the course MICRO-315 under TP4_CamReg
+ */
+
 #include "ch.h"
 #include "hal.h"
 #include <chprintf.h>

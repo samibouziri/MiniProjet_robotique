@@ -1,8 +1,11 @@
-/*
- * ir_sensor.c
+/*	Project: AspiPuck
+ * 	ir_sensor.c
  *
  *  Created on: 7 avr. 2021
- *      Author: sami bouziri
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was created by the authors.
  */
 
 #include <stdio.h>

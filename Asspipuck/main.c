@@ -1,3 +1,13 @@
+/*	Project: AspiPuck
+ * 	main.c
+ *
+ *  Created on: 7 avr. 2021
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was created by the authors.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,9 +1,13 @@
-/*
- * movements.c
+/*	Project: AspiPuck
+ * 	movements.c
  *
  *  Created on: 7 avr. 2021
- *      Author: sami bouziri
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was created by the authors.
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -320,7 +324,7 @@ float get_translation (int32_t last_right_motor_pos,int32_t last_left_motor_pos)
 }
 
 /**
- * @brief	returns the angle of rotation of the epuck from the initalization point
+ * @brief	returns the angle of rotation of the epuck from the initialization point
  *
  * @return	the angle of rotation in rad
  */
@@ -700,7 +704,7 @@ void go_and_avoid(float xg, float yg){
 		if(!arrived && !stop){
 			float alpha=0;
 
-			//allign the robot perpendicular to the wall and decides if it should turn
+			//allign the robot perpendicular to the wall and decide if it should turn
 			//clockwise or anticlockwise
 			if (allign_to_avoid ()){
 				do{

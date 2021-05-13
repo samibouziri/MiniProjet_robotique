@@ -1,3 +1,14 @@
+/*	Project: AspiPuck
+ * 	audio_processing.h
+ *
+ *  Created on: 7 avr. 2021
+ *     Authors: Sami Bouziri
+ *      		Amine Tourki
+ *
+ * This document was modified by the authors. The original document was given in the
+ * moodle of the course MICRO-315 under TP5_Noisy_correction
+ */
+
 #ifndef AUDIO_PROCESSING_H
 #define AUDIO_PROCESSING_H
 
