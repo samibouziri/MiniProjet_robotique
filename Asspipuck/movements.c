@@ -35,6 +35,7 @@
 #define CHARGING_BACKWARD_STEP	5		//distance (in cm) the robot has to travel backward to start charging
 #define CHARGING_ADVANCE_STEP	15 		//distance (in cm) the robot advance by after it has finished charging
 #define CLOSE_THR				300
+#define CLOSE_THR_TURN			350
 #define MAX_DIST_MEAS			1200
 #define TIME_OF_MEAS			400
 #define DIST_IN_FRONT_OF_WALL	15
@@ -68,8 +69,9 @@
 #define THR_CHARGING			200
 #define SENSOR_LOW_THR			40
 #define THR_COEF				3
-#define FORWARD_COEF			3/4
-#define THR_BIAS				40
+#define FORWARD_COEF_C			2/3		//correction coefficient used in the clockwise rotation
+#define FORWARD_COEF_AC			1/2		//correction coefficient used in the anticlockwise rotation
+#define THR_BIAS				200
 #define NUM_PARTS				5
 #define MAX_ANGLE				M_PI
 #define PERIOD					2*M_PI
@@ -391,7 +393,7 @@ void turn_around_clockwise_speed(void){
 
 	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+200) &&
+			!sensor_close_obstacle(SENSOR_2,CLOSE_THR+THR_BIAS) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
@@ -401,11 +403,11 @@ void turn_around_clockwise_speed(void){
 	}
 	//only sensor 3 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_3,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(SENSOR_3)*FORWARD_COEF) &&
+			!sensor_close_obstacle(SENSOR_2,get_calibrated_prox(SENSOR_3)*FORWARD_COEF_C) &&
 			!(sensor_close_obstacle(SENSOR_1,CLOSE_THR)||sensor_close_obstacle(SENSOR_8,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_7,CLOSE_THR)	)
 	{
-		//robot too close to obstacle -> in place rotation to avoid collision
+		//robot too close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_3,ROTATE_CLOSE_THR)){
 			right_motor_set_speed(TURN_EXT_WHEEL_SPEED);
 			left_motor_set_speed(TURN_INT_WHEEL_SPEED);
@@ -507,7 +509,7 @@ bool search_wall (void)
 bool search_obstacle_turn (void)
 {
 	//go forward if no obstacle is ahead
-	while (!colision_detected(CLOSE_THR ) && mode==DEEP_CLEANING )
+	while (!colision_detected(CLOSE_THR_TURN ) && mode==DEEP_CLEANING )
 	{
 		right_motor_set_speed(SPEED);
 		left_motor_set_speed(SPEED);
@@ -535,7 +537,7 @@ void turn_around_anticlockwise_speed(void){
 
 	//no detection -> away from obstacle -> go closer to obstacle
 	if (!sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_7,CLOSE_THR) &&
+			!sensor_close_obstacle(SENSOR_7,CLOSE_THR+THR_BIAS) &&
 			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
 	{
@@ -545,14 +547,14 @@ void turn_around_anticlockwise_speed(void){
 	}
 	//only sensor 6 detects -> robot is close to the obstacle
 	else if (sensor_close_obstacle(SENSOR_6,CLOSE_THR) &&
-			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(SENSOR_6)*FORWARD_COEF) &&
+			!sensor_close_obstacle(SENSOR_7,get_calibrated_prox(SENSOR_6)*FORWARD_COEF_AC) &&
 			!(sensor_close_obstacle(SENSOR_8,CLOSE_THR)||sensor_close_obstacle(SENSOR_1,CLOSE_THR))	 &&
 			!sensor_close_obstacle(SENSOR_2,CLOSE_THR)	)
 	{
-		//robot too close to obstacle -> in place rotation to avoid collision
+		//robot too close to obstacle -> rotation to avoid collision
 		if (sensor_close_obstacle(SENSOR_6,ROTATE_CLOSE_THR)){
-			right_motor_set_speed(-ROTATE_SPEED);
-			left_motor_set_speed(ROTATE_SPEED);
+			right_motor_set_speed(TURN_INT_WHEEL_SPEED);
+			left_motor_set_speed(TURN_EXT_WHEEL_SPEED);
 			return;
 		}
 		//robot close to obstacle -> rotation to avoid collision
@@ -1094,6 +1096,8 @@ static THD_FUNCTION(ThdCollision, arg) {
  */
 void operating_mode(void)
 {
+	clear_leds();
+	chThdSleepMilliseconds(600);
 	while(1) {
 
 		changing_mode=false;
