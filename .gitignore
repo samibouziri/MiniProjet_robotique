@@ -1,10 +1,7 @@
 build
 .DS_store
 lib
-Asspipuck/Makefile
-*.launch
 *.xml
-Asspipuck/Asspipuck.launch 
 
 
 # Prerequisites
