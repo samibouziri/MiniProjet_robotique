@@ -31,6 +31,7 @@ static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 #define MIN_DECREASE				15
 #define MIN_WIDTH					5
 #define PROPORTIONALITY_FACTOR		2
+#define IMAGE_ACQUISITION			10 // making sure at least one picture was taken before the starting of the thread
 
 
 /**
@@ -88,7 +89,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		for (uint16_t i=0; i<IMAGE_BUFFER_SIZE*2;i=i+2)
 		{
 			//extract the green value
-			image[i>>1] = ((((img_buff_ptr[i]&7)<<3)|((img_buff_ptr[i+1]&224)>>5))<<2) ;
+			image[i/2] = ((((img_buff_ptr[i]&7)<<3)|((img_buff_ptr[i+1]&224)>>5))<<2) ;
 			// sum all the intensities of the image to calculate the mean
 			mean+= image[i/2];
 		}
@@ -223,6 +224,7 @@ bool get_detected(void){
  */
 void process_image_start(void){
 	captImThd=chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
+	chThdSleepMilliseconds(IMAGE_ACQUISITION);
 	proImThd=chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 
 }
