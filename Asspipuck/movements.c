@@ -268,6 +268,7 @@ void move_forward(float distance,  int16_t speed )
 	position_mode(distance, distance, speed, speed);
 }
 
+
 /**
  * @brief	moves the robot forward with a certain speed
  *
@@ -277,28 +278,6 @@ void move_forward_speed( int16_t speed )
 {
 	right_motor_set_speed(speed);
 	left_motor_set_speed(speed);
-}
-
-/**
- * @brief	turn the robot to the right with a certain speed
- *
- * @param 	speed (in step/s): speed of travel
- */
-void turn_right( int16_t speed )
-{
-	right_motor_set_speed(speed/2);
-	left_motor_set_speed(speed*2);
-}
-
-/**
- * @brief	rotate the robot to the left with a certain speed
- *
- * @param 	speed (in step/s): speed of rotation
- */
-void rotate_left ( int16_t speed )
-{
-	right_motor_set_speed(speed);
-	left_motor_set_speed(-speed);
 }
 
 
@@ -377,8 +356,11 @@ float get_angle(void) {
 void go_to_xy (float abscisse, float ordonnee, int16_t speed){
 	// divide the path into multiple paths with small travel distance to minimise the error
 	for (uint8_t i=0; i<NUM_PARTS; i++){
-		float alpha =atan2f((ordonnee-y),(abscisse-x))-angle;
-		alpha=confine_angle(alpha);
+		float alpha =0;
+		if (!((ordonnee-y)==0 && (abscisse-x)==0)){
+			alpha =atan2f((ordonnee-y),(abscisse-x))-angle;
+			alpha=confine_angle(alpha);
+		}
 		rotate_rad( alpha, speed);
 		move_forward( sqrt ((ordonnee-y)*(ordonnee-y)+(abscisse-x)*(abscisse-x))/(NUM_PARTS-i), speed );
 	}

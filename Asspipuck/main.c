@@ -15,10 +15,8 @@
 #include "ch.h"
 #include "hal.h"
 #include "memory_protection.h"
-#include <usbcfg.h>
 #include <main.h>
 #include <math.h>
-#include <chprintf.h>
 #include <spi_comm.h>
 
 #include <movements.h>
@@ -28,7 +26,6 @@
 #include <audio/microphone.h>
 #include <audio_processing.h>
 #include <fft.h>
-#include <communications.h>
 #include <arm_math.h>
 
 #include <tof.h>
@@ -42,19 +39,6 @@ MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
 
-static void serial_start(void)
-{
-	static SerialConfig ser_cfg = {
-			115200,
-			0,
-			0,
-			0,
-	};
-
-	sdStart(&SD3, &ser_cfg); // UART3.
-}
-
-
 int main(void)
 {
 	halInit();
@@ -62,17 +46,11 @@ int main(void)
 	mpu_init();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-	//starts the serial communication
-	serial_start();
-
 	//starts the spi communication
 	spi_comm_start();
 
-	//starts the USB communication
-	usb_start();
-
 	//wait for the epuck to be stable
-	chThdSleepMilliseconds(2000);
+	chThdSleepMilliseconds(1500);
 
 	//initialize the motors
 	motors_init();

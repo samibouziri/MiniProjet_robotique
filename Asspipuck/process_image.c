@@ -75,7 +75,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
-	//uint8_t send=0;
 
 	while(chThdShouldTerminateX() == false){
 

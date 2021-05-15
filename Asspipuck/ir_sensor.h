@@ -25,17 +25,6 @@ typedef enum{
 	SENSOR_8,
 }sensors_t;
 
-typedef enum{
-	BACK,
-	BACK_LEFT,
-	LEFT,
-	FRONT_LEFT,
-	FRONT,
-	FRONT_RIGHT,
-	RIGHT,
-	BACK_RIGHT
-}region;
-
 /**
  * @brief	gives the angle of incidence when collinding with a surface
  *
@@ -63,23 +52,5 @@ bool colision_detected (int threshold);
  */
 
 bool sensor_close_obstacle (sensors_t sensor, uint16_t threshold);
-
-/**
- * @brief	detects the region of collision depending on the angle
- * 			of collision
- * @param 	angle (in rad): angle of collision
- * @return 	region of collision
- */
-
-region get_region(float angle);
-
-/**
- * @brief	indicates if the path is free or not based on the region
- * 			that has the highest value of detection
- * @param 	angle (in rad): angle of collision
- * @return 	true if the path is free, false otherwise
- */
-
-bool is_path_free(float angle);
 
 #endif /* IR_SENSOR_H_ */
