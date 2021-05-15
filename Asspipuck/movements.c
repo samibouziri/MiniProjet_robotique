@@ -1045,7 +1045,7 @@ static THD_FUNCTION(RobotPosition, arg) {
  * obstacle and the thread will start checking for the next collision.
  */
 static THD_WORKING_AREA(waThdCollision, 1024);
-static THD_FUNCTION(ThdCollision, arg) {
+static THD_FUNCTION(Collision, arg) {
 
 	chRegSetThreadName(__FUNCTION__);
 	(void)arg;
@@ -1191,7 +1191,7 @@ void set_stop (bool stop_value){
  * 			while the robot is returning home
  */
 void detect_collision_start(void){
-	chThdCreateStatic(waThdCollision, sizeof(waThdCollision), NORMALPRIO, ThdCollision, NULL);
+	chThdCreateStatic(waThdCollision, sizeof(waThdCollision), NORMALPRIO, Collision, NULL);
 }
 
 
